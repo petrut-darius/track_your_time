@@ -10,11 +10,11 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class TestController extends AbstractController
 {
-    #[Route('/api/test', name:'app_test')]
+    #[Route('/api/test', name:'app_test', methods: ["GET"])]
     public function test(CircuitService $service): JsonResponse
     {
         return $this->json([
-            $service->getCircuitTest("https://www.racingcircuits.info/europe/romania/motorpark-romania.html"),
+            "message" => "Hello Angular from Symfony.",
         ]);
     }
 

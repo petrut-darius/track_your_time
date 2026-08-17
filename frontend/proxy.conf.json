@@ -1,0 +1,7 @@
+{
+  "/api": {
+    "target": "https://track-your-time.ddev.site",
+    "secure": false,
+    "changeOrigin": true
+  }
+}
