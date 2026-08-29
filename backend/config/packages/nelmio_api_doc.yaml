@@ -1,0 +1,18 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: track_your_time_api
+            description: this is an rest api!
+            version: 1.0.0
+        components:
+            securitySchemas:
+                Bearer:
+                    type: htpp
+                    scheme: bearer
+                    bearerFormat: JWT
+                    description: Enter your JWT Bearer token
+        security:
+            - Bearer: []
+    areas: # to filter documented areas
+        path_patterns:
+            - ^/api(?!/doc$) # Accepts routes under /api except /api/doc

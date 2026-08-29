@@ -5,16 +5,44 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Nelmio\ApiDocBundle\Attribute\Security;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use OpenApi\Attributes as OA;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Response;
 
 final class RegistrationController extends AbstractController
 {
     #[Route('/api/register', name: 'app_api_registration', methods: ["POST"])]
+    #[OA\Tag(name: "Authentication")]
+    #[Oa\RequestBody(
+        description: "User registration data",
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: "email", type: "string", example: "user@example.com"),
+                    new OA\Property(property: 'username', type: 'string', example: 'john_doe'),                                                                                                                                             
+                    new OA\Property(property: 'first_name', type: 'string', example: 'John'),                                                                                                                                               
+                    new OA\Property(property: 'last_name', type: 'string', example: 'Doe'),                                                                                                                                                 
+                    new OA\Property(property: 'password', type: 'string', format: 'password', example: 'Secret123456!') 
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: Response::HTTP_CREATED,
+        description: "User registered successfully",
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 1),
+                new OA\Property(property: 'email', type: 'string', example: 'user@example.com')
+            ]
+        )
+    )]
+    #[OA\Response(response: Response::HTTP_UNPROCESSABLE_ENTITY, description: "Validation error")]
+    #[Security(name: null)]
     public function index(Request $request, EntityManagerInterface $em, UserPasswordHasherInterface $passwordHasher, UserRepository $userRepository): JsonResponse
     {    
         try {

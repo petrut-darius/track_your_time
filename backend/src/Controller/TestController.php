@@ -11,11 +11,9 @@ use Symfony\Component\Routing\Attribute\Route;
 final class TestController extends AbstractController
 {
     #[Route('/api/test', name:'app_test', methods: ["GET"])]
-    public function test(CircuitService $service): JsonResponse
+    public function test(): JsonResponse
     {
-        return $this->json([
-            "message" => "Hello Angular from Symfony.",
-        ]);
+        return $this->json("Hello Angular from symfony");
     }
 
     #[Route("/api/secret", name:"app_api_secret")]
