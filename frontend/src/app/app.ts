@@ -1,9 +1,10 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Login } from './components/login/login';
 
 @Component({
   selector: 'app-root',
-  imports: [],
+  imports: [Login],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

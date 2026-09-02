@@ -36,9 +36,9 @@ final class CarController extends AbstractController
         ], Response::HTTP_OK);
     }
 
-    #[Route("/api/car/create", name: "app_api_car_create", methods: ["POST"])]
+    #[Route("/api/cars/create", name: "app_api_car_create", methods: ["POST"])]
     #[IsGranted("IS_AUTHENTICATED_FULLY")]
-    public function create(Request $request, #[CurrentUser] ?User $user): Response
+    public function create(Request $request, #[CurrentUser] User $user): Response
     {
         $name = trim((string) ($request->request->get("name") ?? ""));
         $hp = trim((int) ($request->request->getInt("hp") ?? 0));
@@ -85,7 +85,7 @@ final class CarController extends AbstractController
         ], Response::HTTP_CREATED);
     }
 
-    #[Route("/api/car/{id}", name: "app_api_car_show", methods: ["GET"], requirements: ["id" => "\d+"])]
+    #[Route("/api/cars/{id}", name: "app_api_car_show", methods: ["GET"], requirements: ["id" => "\d+"])]
     public function show(?Car $car): Response
     {
         if(!$car instanceof Car) {
@@ -97,7 +97,8 @@ final class CarController extends AbstractController
         ], Response::HTTP_OK, [], ["groups" => "car:read"]);
     }
 
-    #[Route("/api/car/{id}/edit", name: "app_api_car_edit", methods: [ "POST"], requirements: ["id" => "\d+"])]
+    #[Route("/api/cars/{id}/edit", name: "app_api_car_edit", methods: [ "POST"], requirements: ["id" => "\d+"])]
+    #[IsGranted("AUTHENTICATED_FULLY")]
     public function edit(?Car $car, Request $request, Filesystem $fileSystem): Response
     {
         if(!$car instanceof Car) {
@@ -144,8 +145,17 @@ final class CarController extends AbstractController
         ], Response::HTTP_OK);
     }
 
-    public function delete(): Response
+    #[Route("/api/cars/{id}/delete", name: "app_api_car_delete", requirements: ["id" => "\d+"], methods: ["DELETE"])]
+    #[IsGranted("AUTHENTICATED_FULLY")]
+    public function delete(Request $request, ?Car $car, #[CurrentUser] User $user): Response
     {
+        if(!$car instanceof Car) {
+            return $this->json([], Response::HTTP_NOT_FOUND);
+        }
+
+        $this->em->remove($car);
+        $this->em->flush();
+
         return $this->json([
             "data" => "Successfully deleted your car.",
         ], Response::HTTP_OK);

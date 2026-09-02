@@ -5,9 +5,9 @@ nelmio_api_doc:
             description: this is an rest api!
             version: 1.0.0
         components:
-            securitySchemas:
+            securitySchemes:
                 Bearer:
-                    type: htpp
+                    type: http
                     scheme: bearer
                     bearerFormat: JWT
                     description: Enter your JWT Bearer token
