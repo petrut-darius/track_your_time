@@ -22,7 +22,6 @@ class CircuitAction
     public function __construct(private CountryRepository $countryRepository,
                                 private StatusRepository $statusRepository,
                                 private TypeRepository $typeRepository,
-                                private ConfigurationRepository $configurationRepository,
                                 private GradeRepository $gradeRepository,                           
                                 private CircuitRepository $circuitRepository, 
                                 private EntityManagerInterface $em,
