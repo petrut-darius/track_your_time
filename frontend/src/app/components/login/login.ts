@@ -2,35 +2,33 @@ import { Component, OnInit } from '@angular/core';
 import { Auth } from '../../services/auth';
 import { LoginRequest } from '../../models/login-request';
 import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
-export class Login implements OnInit {
-  constructor(private authService: Auth) {
-
-  }
+export class Login{
+  constructor(private authService: Auth, private router: Router) {}
 
   credentials: LoginRequest = {
     email: "",
     password: "",
   }
 
-  isLoggedIn() {
-    return this.authService.isLoggedIn();
-  }
+  errorMessage: string|null = null;
 
   login() {
-    this.authService.login(this.credentials).subscribe(() => {
-      console.log("Login Succesfully");
-    });
-  }
-
-  ngOnInit(): void {
-    this.isLoggedIn();
+    this.authService.login(this.credentials).subscribe({
+      next: () =>  {
+        this.router.navigate(["/"]);
+        console.log("Logged in successfully.")
+      },
+      error: () =>  {
+        this.errorMessage = "Invalid email or password";
+      }
+    })
   }
 }

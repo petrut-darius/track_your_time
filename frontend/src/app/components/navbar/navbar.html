@@ -1,0 +1,24 @@
+<nav class="w-[70vw] mx-auto my-10 rounded-4xl">
+    <div class="flex items-center justify-around">
+        <div>
+            //photo
+        </div>
+        <div class="bg-brand p-5 rounded-4xl">
+            <ul class="flex gap-8">
+                <li class="text-white transition hover:bg-red-900 py-1 px-2 rounded-sm">Home</li>
+                <li class="text-white transition hover:bg-red-900 py-1 px-2 rounded-sm">Circuits</li>
+                <li class="text-white transition hover:bg-red-900 py-1 px-2 rounded-sm">Cars</li>
+                <li class="text-white transition hover:bg-red-900 py-1 px-2 rounded-sm">Leaderboard</li>
+            </ul>
+        </div>
+        <div>
+            <ul *ngIf="authService.authStatus$ | async; else loggedOut" class="flex gap-4">
+                <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm">Friends</li>
+                <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm">Profile</li>
+            </ul>
+            <ng-template #loggedOut>
+                Logged out
+            </ng-template>
+        </div>
+    </div>
+</nav>

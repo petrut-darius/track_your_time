@@ -7,3 +7,17 @@ lexik_jwt_authentication:
     blocklist_token:
         enabled: true
         cache: cache.app
+
+    token_extractors:
+        authorization_header:
+            enabled: false
+        cookie:
+            enabled: true
+            name: BEARER
+
+    set_cookies:
+        BEARER:
+            lifetime: null
+            samesite: strict
+
+    remove_token_from_body_when_cookies_used: true

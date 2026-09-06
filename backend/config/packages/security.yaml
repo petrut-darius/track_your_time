@@ -32,7 +32,7 @@ security:
                 provider: app_user_provider
             logout:
                 path: api_logout
-                delete_cookies: ['refresh_token']
+                delete_cookies: ['refresh_token', "BEARER"]
                 clear_site_data: ['cookies', 'storage']
 
         main:
