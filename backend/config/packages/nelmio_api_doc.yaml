@@ -2,7 +2,7 @@ nelmio_api_doc:
     documentation:
         info:
             title: track_your_time_api
-            description: this is an rest api!
+            description: This is the API documentation.
             version: 1.0.0
         components:
             securitySchemes:

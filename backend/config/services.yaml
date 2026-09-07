@@ -7,7 +7,8 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
-    car_photos_directory: "%kernel.project_dir%/public/uploads/cars"
+    car_photos_directory: "%kernel.project_dir%/public/uploads/car"
+    profile_photos_directory: "%kernel.project_dir%/public/uploads/profile"
 
 services:
     # default configuration for services in *this* file
@@ -19,9 +20,17 @@ services:
     # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: '../src/'
+        exclude:
+            - "../src/Service/FileUploaderService.php"
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
-    App\Service\FileUploaderService:
+    App\Service\FileUploaderService.cars:
+        class: App\Service\FileUploaderService
         arguments:
             $targetDirectory: "%car_photos_directory%"
+
+    App\Service\FileUploaderService.profile:
+        class: App\Service\FileUploaderService
+        arguments:
+            $targetDirectory: "%profile_photos_directory%"

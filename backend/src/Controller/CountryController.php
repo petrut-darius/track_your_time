@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class CountryController extends AbstractController
 {
-    #[Route('/api/countries', name: 'app_api_country')]
+    #[Route('/api/countries', name: 'app_api_country', methods: ["GET"])]
     #[OA\Tag(name: "Countries")]
     #[Security(name: "Bearer")]
     #[OA\Response(

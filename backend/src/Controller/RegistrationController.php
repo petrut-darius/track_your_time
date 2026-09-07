@@ -24,10 +24,10 @@ final class RegistrationController extends AbstractController
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: "email", type: "string", example: "user@example.com"),
-                    new OA\Property(property: 'username', type: 'string', example: 'john_doe'),                                                                                                                                             
-                    new OA\Property(property: 'first_name', type: 'string', example: 'John'),                                                                                                                                               
-                    new OA\Property(property: 'last_name', type: 'string', example: 'Doe'),                                                                                                                                                 
-                    new OA\Property(property: 'password', type: 'string', format: 'password', example: 'Secret123456!') 
+                new OA\Property(property: 'username', type: 'string', example: 'john_doe'),                                                                                                                                             
+                new OA\Property(property: 'first_name', type: 'string', example: 'John'),                                                                                                                                               
+                new OA\Property(property: 'last_name', type: 'string', example: 'Doe'),                                                                                                                                                 
+                new OA\Property(property: 'password', type: 'string', format: 'password', example: 'Secret123456!') 
             ]
         )
     )]

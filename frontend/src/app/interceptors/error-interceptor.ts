@@ -11,37 +11,37 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
     const authService = inject(Auth);
     const router = inject(Router);
 
-  return next(req).pipe(//ce rezulta next(req) trece prin pipe
-    catchError((error: unknown) => {
-        if(error instanceof HttpErrorResponse && error.status === 401 && !req.url.includes("/api/login_check") && !req.url.includes("/api/token/refresh")) {
-            if(!isRefreshing) {
-                isRefreshing = true;
-                refreshComplete$.next(false);
+    return next(req).pipe(//ce rezulta next(req) trece prin pipe
+      catchError((error: unknown) => {
+          if(error instanceof HttpErrorResponse && error.status === 401 && !req.url.includes("/api/login_check") && !req.url.includes("/api/token/refresh")) {
+              if(!isRefreshing) {
+                  isRefreshing = true;
+                  refreshComplete$.next(false);
 
-                return authService.refreshToken().pipe(
-                    switchMap(() => {//switchMap - o functie care de fiecare cand vede ca ii este schimbat parametrul o ia de la capat
-                        isRefreshing = false;
-                        refreshComplete$.next(true);
-                        return next(req);
-                    }),
-                    catchError((refreshError) => {
-                        isRefreshing = false;
-                        authService.logout();
-                        router.navigate(["/login"]);
-                        return throwError(() => refreshError);
-                    })
-                );
-            } else {
-                return refreshComplete$.pipe(
-                    filter((done) => done === true),//done valoarea lui refreshComplete$
-                    take(1),
-                    switchMap((success) => success ? next(req) : throwError(() => new Error("Session expired.")))
-                )
-            }            
-        }
-        return throwError(() => error);
-    })
-  );
+                  return authService.refreshToken().pipe(
+                      switchMap(() => {//switchMap - o functie care de fiecare cand vede ca ii este schimbat parametrul o ia de la capat
+                          isRefreshing = false;
+                          refreshComplete$.next(true);
+                          return next(req);//asta gen il reexecuta pe ala de la 14 daca era problema
+                      }),
+                      catchError((refreshError) => {
+                          isRefreshing = false;
+                          authService.logout();
+                          router.navigate(["/login"]);
+                          return throwError(() => refreshError);
+                      })
+                  );
+              } else {
+                  return refreshComplete$.pipe(
+                      filter((done) => done === true),//done valoarea lui refreshComplete$
+                      take(1),
+                      switchMap((success) => success ? next(req) : throwError(() => new Error("Session expired.")))
+                  )
+              }            
+          }
+          return throwError(() => error);
+      })
+    );
 };
 
 /*

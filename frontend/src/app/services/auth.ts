@@ -15,7 +15,6 @@ export class Auth {
 
   login(credentials: LoginRequest): Observable<void> {
     return this.http.post("/api/login_check", credentials, { withCredentials: true})
-                      //.pipe( callback 1, callback 2) -> ce retunreaza callback 1 este parametru la callback 2, si ia ca param ce rezulta obiectu pe care este calluit
                       .pipe(map(() => void 0), //map(() => void 0) pentru fiecare parametru primit prelucreaza valoarea un foreach, si void 0 = undefined, ca access-tokenu oricum e http-only si at nu conteaza ce primeste angular de la symfony
                              tap(() => this.isAuthenticated$.next(true)),// .next trimite valoarea(true) catre observer; .tap() -> daca vrei sa trimiti un logger spre exemplu, ca nu poti schimba valoarea primita in el
                             catchError((error) => {
