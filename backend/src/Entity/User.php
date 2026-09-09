@@ -10,6 +10,9 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Serializer\Attribute\Ignore;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Constraints\PasswordStrength;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
@@ -23,6 +26,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 180)]
     #[Groups("user:read")]
+    #[Assert\NotBlank(groups: ['registration'])]
+    #[Assert\Email(groups: ['registration'])]
+    #[Assert\Length(max: 180, groups: ['registration'])]
     private ?string $email = null;
 
     /**
@@ -31,22 +37,46 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private array $roles = [];
 
+
+    #[Ignore]
+    #[Assert\NotBlank(groups: ['registration'])]
+    #[Assert\PasswordStrength(minScore: PasswordStrength::STRENGTH_MEDIUM, groups: ['registration'])]
+    #[Assert\Length(max: 255, min: 8, groups: ['registration'])]
+    private ?string $plainPassword = null;
+    public function setPlainPassword(?string $plainPassword): static
+    {
+        $this->plainPassword = $plainPassword;
+        return $this;
+    }
+
+    public function getPlainPassword(): string
+    {
+        return $this->plainPassword;
+    }
+
     /**
      * @var string The hashed password
      */
     #[ORM\Column]
+    #[Assert\NotBlank()]
     private ?string $password = null;
 
     #[ORM\Column(length: 30, unique: true)]
     #[Groups("user:read")]
+    #[Assert\NotBlank(groups: ['registration'])]
+    #[Assert\Length(max: 30, groups: ['registration'])]
     private ?string $username = null;
 
     #[ORM\Column(length: 255)]
     #[Groups("user:read")]
+    #[Assert\NotBlank(groups: ['registration'])]
+    #[Assert\Length(max: 255, groups: ['registration'])]
     private ?string $last_name = null;
 
     #[ORM\Column(length: 255)]
     #[Groups("user:read")]
+    #[Assert\NotBlank(groups: ['registration'])]
+    #[Assert\Length(max: 255, groups: ['registration'])]
     private ?string $first_name = null;
 
     /**
@@ -54,6 +84,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\OneToMany(targetEntity: Car::class, mappedBy: 'user')]
     private Collection $cars;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups("user:read")]
+    #[Assert\Image(detectCorrupted: true, mimeTypes: ["image/jpeg", "image/png", "image/webp"])]
+    private ?array $avatar = null;
 
     public function __construct()
     {
@@ -203,6 +238,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
                 $car->setUser(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getAvatar(): ?array
+    {
+        return $this->avatar;
+    }
+
+    public function setAvatar(?array $avatar): static
+    {
+        $this->avatar = $avatar;
 
         return $this;
     }

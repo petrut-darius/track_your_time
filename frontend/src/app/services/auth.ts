@@ -8,6 +8,8 @@ import { LoginResponse } from '../models/login-response';
   providedIn: 'root',
 })
 export class Auth {
+  //also create a subject that keeps the user data that should be updated on the login page, register, and authCheck
+
   private isAuthenticated$ = new BehaviorSubject<boolean>(false); //subject -> e un observable care poate fi multicasted to many observers
   readonly authStatus$ = this.isAuthenticated$.asObservable();
 

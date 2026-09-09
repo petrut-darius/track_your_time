@@ -5,14 +5,27 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Gesdinet\JWTRefreshTokenBundle\Generator\RefreshTokenGeneratorInterface;
+use Gesdinet\JWTRefreshTokenBundle\Model\RefreshTokenManagerInterface;
+use Lexik\Bundle\JWTAuthenticationBundle\Event\AuthenticationSuccessEvent;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Nelmio\ApiDocBundle\Attribute\Security;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use OpenApi\Attributes as OA;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Serializer\Exception\PartialDenormalizationException;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\ConstraintViolation;
+use Symfony\Component\Validator\ConstraintViolationList;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class RegistrationController extends AbstractController
 {
@@ -43,56 +56,65 @@ final class RegistrationController extends AbstractController
     )]
     #[OA\Response(response: Response::HTTP_UNPROCESSABLE_ENTITY, description: "Validation error")]
     #[Security(name: null)]
-    public function index(Request $request, EntityManagerInterface $em, UserPasswordHasherInterface $passwordHasher, UserRepository $userRepository): JsonResponse
+    public function index(Request $request, EntityManagerInterface $em, UserPasswordHasherInterface $passwordHasher, UserRepository $userRepository, ValidatorInterface $validator, SerializerInterface $serializer, JWTTokenManagerInterface $jwtManager, EventDispatcherInterface $eventDispatcher): JsonResponse
     {    
         try {
-            $data = $request->toArray();
+            $data = $request->getContent();
+            json_decode($data, false, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
             return $this->json(["error" => "The request body must be valid JSON"], Response::HTTP_BAD_REQUEST);
         }
 
-        $email = trim((string) ($data["email"] ?? ""));
-        $username = trim((string) ($data["username"] ?? ""));
-        $last_name = trim((string) ($data["last_name"] ?? ""));
-        $first_name = trim((string) ($data["first_name"] ?? ""));
-        $plainTextPassword = trim((string) ($data["password"] ?? ""));
+        $violations = new ConstraintViolationList();
+        $user = new User();
+
+        try {
+            $serializer->deserialize($data, User::class, "json", [AbstractNormalizer::OBJECT_TO_POPULATE => $user, DenormalizerInterface::COLLECT_DENORMALIZATION_ERRORS => true]);
+        }catch(PartialDenormalizationException $e) {
+            //tot ce aici adauga in $vioaltions erori in mare parte de tipul variabilei
+            foreach ($e->getNotNormalizableValueErrors() as $e) {
+                $message = sprintf('The type must be one of "%s" (%s given)', implode(', ', $e->getExpectedTypes()), $e->getCurrentType());
+                $parameters = [];
+                if ($e->canUseMessageForUser()) {
+                    $parameters['hint'] = $e->getMessage();
+                }
+                $violations->add(new ConstraintViolation($message, '', $parameters, null, $e->getPath(), null));
+            }
+        }
+
+        $violations->addAll($validator->validate($user));//asta adauga efectiv de lungime etc($validatoru e cel care verifica alea de is setate in entitate)
 
         $errors = [];
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors["email"] = "Enter a valid email address.";
-        } else if ($userRepository->findOneBy(["email" => $email])) {
-            $errors["email"] = "An account with this email already exists.";
+        if($violations->count() > 0) {
+            foreach($violations as $violation) {
+                $errors[$violation->getPropertyPath()] = $violation->getMessage();
+            }
+
+            return $this->json([
+                "errors" => $errors,
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        if (mb_strlen($plainTextPassword) < 8) {
-            $errors["password"] = "Password must contain at least 12 characters.";
-        }
-
-        if($username === "") $errors["username"] = "Username is required.";
-        if($first_name === "") $errors["first_name"] = "First name is required.";
-        if($last_name === "") $errors["last_name"] = "Last name is required.";
-
-        if ($errors) {
-            return $this->json(["errors" => $errors], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
-
-        $user = new User();    
-
-        $hashedPassword = $passwordHasher->hashPassword($user, $plainTextPassword);
-
-        $user->setEmail(mb_strtolower($email, "UTF-8"))
-            ->setUsername($username)
-            ->setLastName($last_name)
-            ->setFirstName($first_name)
-            ->setPassword($passwordHasher->hashPassword($user, $plainTextPassword));
+        $user->setPassword($passwordHasher->hashPassword($user, $user->getPlainPassword()));
+        $user->setPlainPassword(null);
+        $user->setRoles(["ROLE_USER"]);
 
         $em->persist($user);
         $em->flush();
 
-        return $this->json([
-            "id" => $user->getId(),
-            "email" => $user->getEmail(),
-        ], Response::HTTP_CREATED);
+        //autologin
+        $userData = json_decode($serializer->serialize($user, "json", ["groups" => "user:read"]));
+        $data = ["user" => $userData];
+
+        //return the user data here so I don't need to make a call to /api/me on the angular side
+        $response = new JsonResponse($data, Response::HTTP_CREATED);
+
+        $event = new AuthenticationSuccessEvent($data, $user, $response);
+        $eventDispatcher->dispatch($event);
+
+        $response->setData($event->getData());
+
+        return $response;
     }
 }
