@@ -62,12 +62,19 @@ class Circuit
     #[ORM\ManyToMany(targetEntity: Grade::class, mappedBy: 'circuit')]
     private Collection $grades;
 
+    /**
+     * @var Collection<int, CircuitTime>
+     */
+    #[ORM\OneToMany(targetEntity: CircuitTime::class, mappedBy: 'circuit', orphanRemoval: true)]
+    private Collection $circuitTimes;
+
     public function __construct()
     {
         $this->statuses = new ArrayCollection();
         $this->types = new ArrayCollection();
 //        $this->configurations = new ArrayCollection();
         $this->grades = new ArrayCollection();
+        $this->circuitTimes = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -264,6 +271,36 @@ class Circuit
     {
         if ($this->grades->removeElement($grade)) {
             $grade->removeCircuit($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, CircuitTime>
+     */
+    public function getCircuitTimes(): Collection
+    {
+        return $this->circuitTimes;
+    }
+
+    public function addCircuitTime(CircuitTime $circuitTime): static
+    {
+        if (!$this->circuitTimes->contains($circuitTime)) {
+            $this->circuitTimes->add($circuitTime);
+            $circuitTime->setCircuit($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCircuitTime(CircuitTime $circuitTime): static
+    {
+        if ($this->circuitTimes->removeElement($circuitTime)) {
+            // set the owning side to null (unless already changed)
+            if ($circuitTime->getCircuit() === $this) {
+                $circuitTime->setCircuit(null);
+            }
         }
 
         return $this;

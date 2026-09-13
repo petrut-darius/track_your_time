@@ -1,0 +1,57 @@
+<div>
+    <h2>Edit your profile.</h2>
+
+    <form #profileFormRef="ngForm" (ngSubmit)="updateProfile()" class="space-y-6">
+        <div>
+            <label for="email">Email address</label>
+            <div>
+                <input id="email" type="email" name="email" [(ngModel)]="profileForm.email" #email="ngModel" required autocomplete="email">
+            </div>
+            @if (email.invalid && email.touched) {
+                <span class="error">Valid email is required</span>
+            }
+        </div>
+
+        <div>
+            <label for="username">Username</label>
+            <div>
+                <input id="username" type="text" name="username" [(ngModel)]="profileForm.username" #username="ngModel" required >
+            </div>
+
+            @if (username.invalid && username.touched) {
+                <span class="error">Username is required (min 3 chars)</span>
+            }
+        </div>
+
+        <div>
+            <label for="last_name">Last name</label>
+            <div>
+                <input id="last_name" type="text" name="last_name" [(ngModel)]="profileForm.last_name" #last_name="ngModel" required >
+            </div>
+
+            @if (last_name.invalid && last_name.touched) {
+                <span class="error">Last name is required</span>
+            }
+        </div>
+
+        <div>
+            <label for="first_name">First name</label>
+            <div>
+                <input id="first_name" type="text" name="first_name" [(ngModel)]="profileForm.first_name" #first_name="ngModel" required >
+            </div>
+
+            @if (first_name.invalid && first_name.touched) {
+                <span class="error">First name is required</span>
+            }
+        </div>
+
+        <div>
+            <label for="avatar">Avatar</label>
+            <div>
+                <input id="avatar" type="file" name="avatar" (change)="onAvatarSelected($event)" accept="image/*">
+            </div>
+        </div>
+
+        <button type="submit" [disabled]="profileFormRef.invalid">Update profile</button>
+    </form>
+</div>

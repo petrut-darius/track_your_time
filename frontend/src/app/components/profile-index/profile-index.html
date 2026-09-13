@@ -1,0 +1,14 @@
+@if (user$ | async; as user) {
+<section>
+    <div class="flex">
+        <img [src]="enviroment + user.avatar" alt="profile picture">
+        <div>
+            <h2>{{ user.username }}</h2>
+            <p>{{ user.last_name }} {{ user.first_name }}</p>
+            @if ( isOwnProfile$ | async) {
+                <a [routerLink]="['/profile/edit']">Edit your profile</a>
+            }
+        </div>
+    </div>
+</section>
+}

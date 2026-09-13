@@ -13,7 +13,7 @@ use OpenApi\Attributes as OA;
 final class IdentityController extends AbstractController
 {
     #[Route('/api/me', name: 'app_api_me', methods: ["GET"])]
-    #[IsGranted("IS_FULLY_AUTHENTICATED")]
+    #[IsGranted("IS_AUTHENTICATED_FULLY")]
     #[OA\Tag(name: "Identity")]
     #[OA\Response(response: Response::HTTP_OK, description: "Successfully sent your user data")]
     #[OA\Response(response: Response::HTTP_UNAUTHORIZED, description: "Not authenticated")]
@@ -21,6 +21,6 @@ final class IdentityController extends AbstractController
     {
         return $this->json([
             "data" => $user,
-        ], Response::HTTP_OK, ["groups" => "user:read"]);
+        ], Response::HTTP_OK, [], ["groups" => "user:read"]);
     }
 }

@@ -11,6 +11,7 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Serializer\Attribute\Ignore;
+use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Constraints\PasswordStrength;
 
@@ -22,10 +23,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["user:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180)]
-    #[Groups("user:read")]
+    #[Groups(["friendship:read", "user:update"])]
     #[Assert\NotBlank(groups: ['registration'])]
     #[Assert\Email(groups: ['registration'])]
     #[Assert\Length(max: 180, groups: ['registration'])]
@@ -37,10 +39,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private array $roles = [];
 
-
-    #[Ignore]
+    #[SerializedName("plain_password")]
     #[Assert\NotBlank(groups: ['registration'])]
-    #[Assert\PasswordStrength(minScore: PasswordStrength::STRENGTH_MEDIUM, groups: ['registration'])]
+    #[Assert\PasswordStrength(minScore: PasswordStrength::STRENGTH_WEAK, groups: ['registration'])]
     #[Assert\Length(max: 255, min: 8, groups: ['registration'])]
     private ?string $plainPassword = null;
     public function setPlainPassword(?string $plainPassword): static
@@ -49,7 +50,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getPlainPassword(): string
+    public function getPlainPassword(): string|null
     {
         return $this->plainPassword;
     }
@@ -62,19 +63,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 30, unique: true)]
-    #[Groups("user:read")]
+    #[Groups(["user:read", "friendship:read", "user:update"])]
     #[Assert\NotBlank(groups: ['registration'])]
     #[Assert\Length(max: 30, groups: ['registration'])]
     private ?string $username = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups("user:read")]
+    #[Groups(["user:read", "friendship:read", "user:update"])]
     #[Assert\NotBlank(groups: ['registration'])]
     #[Assert\Length(max: 255, groups: ['registration'])]
     private ?string $last_name = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups("user:read")]
+    #[Groups(["user:read", "friendship:read", "user:update"])]
     #[Assert\NotBlank(groups: ['registration'])]
     #[Assert\Length(max: 255, groups: ['registration'])]
     private ?string $first_name = null;
@@ -87,12 +88,29 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(nullable: true)]
     #[Groups("user:read")]
-    #[Assert\Image(detectCorrupted: true, mimeTypes: ["image/jpeg", "image/png", "image/webp"])]
-    private ?array $avatar = null;
+    private ?string $avatar = null;
+
+    /**
+     * @var Collection<int, CircuitTime>
+     */
+    #[ORM\OneToMany(targetEntity: CircuitTime::class, mappedBy: 'user', orphanRemoval: true)]
+    private Collection $circuitTimes;
+
+    /**
+     * @var Collection<int, Friendship>
+     */
+    #[ORM\OneToMany(targetEntity: Friendship::class, mappedBy: 'user')]
+    private Collection $sentFriendships;
+
+    #[ORM\OneToMany(targetEntity: Friendship::class, mappedBy: 'friend')]
+    private Collection $receivedFriendships;
 
     public function __construct()
     {
         $this->cars = new ArrayCollection();
+        $this->circuitTimes = new ArrayCollection();
+        $this->sentFriendships = new ArrayCollection();
+        $this->receivedFriendships = new ArrayCollection();    
     }
 
     public function getId(): ?int
@@ -176,6 +194,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         // @deprecated, to be removed when upgrading to Symfony 8
     }
 
+    #[Groups("circuit-time:read")]
     public function getUsername(): ?string
     {
         return $this->username;
@@ -242,14 +261,81 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getAvatar(): ?array
+    public function getAvatar(): ?string
     {
         return $this->avatar;
     }
 
-    public function setAvatar(?array $avatar): static
+    public function setAvatar(?string $avatar): static
     {
         $this->avatar = $avatar;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, CircuitTime>
+     */
+    public function getCircuitTimes(): Collection
+    {
+        return $this->circuitTimes;
+    }
+
+    public function addCircuitTime(CircuitTime $circuitTime): static
+    {
+        if (!$this->circuitTimes->contains($circuitTime)) {
+            $this->circuitTimes->add($circuitTime);
+            $circuitTime->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCircuitTime(CircuitTime $circuitTime): static
+    {
+        if ($this->circuitTimes->removeElement($circuitTime)) {
+            // set the owning side to null (unless already changed)
+            if ($circuitTime->getUser() === $this) {
+                $circuitTime->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Friendship>
+     */
+    public function getSentFriendships(): Collection
+    {
+        return $this->sentFriendships;
+    }
+
+    /**
+     * @return Collection<int, Friendship>
+     */
+    public function getReceivedFriendships(): Collection
+    {
+        return $this->receivedFriendships;
+    }
+
+    public function addSentFriendship(Friendship $friendship): static
+    {
+        if (!$this->sentFriendships->contains($friendship)) {
+            $this->sentFriendships->add($friendship);
+            $friendship->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeSentFriendship(Friendship $friendship): static
+    {
+        if ($this->sentFriendships->removeElement($friendship)) {
+            if ($friendship->getUser() === $this) {
+                $friendship->setUser(null);
+            }
+        }
 
         return $this;
     }

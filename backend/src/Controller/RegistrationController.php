@@ -3,20 +3,14 @@
 namespace App\Controller;
 
 use App\Entity\User;
-use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Gesdinet\JWTRefreshTokenBundle\Generator\RefreshTokenGeneratorInterface;
-use Gesdinet\JWTRefreshTokenBundle\Model\RefreshTokenManagerInterface;
-use Lexik\Bundle\JWTAuthenticationBundle\Event\AuthenticationSuccessEvent;
-use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use Lexik\Bundle\JWTAuthenticationBundle\Security\Http\Authentication\AuthenticationSuccessHandler;
 use Nelmio\ApiDocBundle\Attribute\Security;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use OpenApi\Attributes as OA;
-use Psr\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\Exception\PartialDenormalizationException;
@@ -56,7 +50,7 @@ final class RegistrationController extends AbstractController
     )]
     #[OA\Response(response: Response::HTTP_UNPROCESSABLE_ENTITY, description: "Validation error")]
     #[Security(name: null)]
-    public function index(Request $request, EntityManagerInterface $em, UserPasswordHasherInterface $passwordHasher, UserRepository $userRepository, ValidatorInterface $validator, SerializerInterface $serializer, JWTTokenManagerInterface $jwtManager, EventDispatcherInterface $eventDispatcher): JsonResponse
+    public function index(Request $request, EntityManagerInterface $em, UserPasswordHasherInterface $passwordHasher, ValidatorInterface $validator, SerializerInterface $serializer, AuthenticationSuccessHandler $successHandler): JsonResponse
     {    
         try {
             $data = $request->getContent();
@@ -69,7 +63,7 @@ final class RegistrationController extends AbstractController
         $user = new User();
 
         try {
-            $serializer->deserialize($data, User::class, "json", [AbstractNormalizer::OBJECT_TO_POPULATE => $user, DenormalizerInterface::COLLECT_DENORMALIZATION_ERRORS => true]);
+            $serializer->deserialize($data, User::class, "json", [AbstractNormalizer::OBJECT_TO_POPULATE => $user, DenormalizerInterface::COLLECT_DENORMALIZATION_ERRORS => true, AbstractNormalizer::IGNORED_ATTRIBUTES => ["id", "password", "roles"]]);
         }catch(PartialDenormalizationException $e) {
             //tot ce aici adauga in $vioaltions erori in mare parte de tipul variabilei
             foreach ($e->getNotNormalizableValueErrors() as $e) {
@@ -82,7 +76,7 @@ final class RegistrationController extends AbstractController
             }
         }
 
-        $violations->addAll($validator->validate($user));//asta adauga efectiv de lungime etc($validatoru e cel care verifica alea de is setate in entitate)
+        $violations->addAll($validator->validate($user, null, ["registration"]));//asta adauga efectiv de lungime etc($validatoru e cel care verifica alea de is setate in entitate)
 
         $errors = [];
 
@@ -96,6 +90,12 @@ final class RegistrationController extends AbstractController
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
+    $plainPassword = $user->getPlainPassword();
+    if ($plainPassword === null) {
+        // belt-and-suspenders: should be caught by validation above, but never trust one layer
+        return $this->json(["errors" => ["plainPassword" => "This value should not be blank."]], Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
+
         $user->setPassword($passwordHasher->hashPassword($user, $user->getPlainPassword()));
         $user->setPlainPassword(null);
         $user->setRoles(["ROLE_USER"]);
@@ -103,18 +103,6 @@ final class RegistrationController extends AbstractController
         $em->persist($user);
         $em->flush();
 
-        //autologin
-        $userData = json_decode($serializer->serialize($user, "json", ["groups" => "user:read"]));
-        $data = ["user" => $userData];
-
-        //return the user data here so I don't need to make a call to /api/me on the angular side
-        $response = new JsonResponse($data, Response::HTTP_CREATED);
-
-        $event = new AuthenticationSuccessEvent($data, $user, $response);
-        $eventDispatcher->dispatch($event);
-
-        $response->setData($event->getData());
-
-        return $response;
+        return $successHandler->handleAuthenticationSuccess($user);
     }
 }

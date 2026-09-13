@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { LoginRequest } from '../models/login-request';
 import { BehaviorSubject, catchError, map, Observable, of, tap, throwError } from 'rxjs';
 import { LoginResponse } from '../models/login-response';
+import { UserData } from '../models/user-data';
 
 @Injectable({
   providedIn: 'root',
@@ -13,13 +14,20 @@ export class Auth {
   private isAuthenticated$ = new BehaviorSubject<boolean>(false); //subject -> e un observable care poate fi multicasted to many observers
   readonly authStatus$ = this.isAuthenticated$.asObservable();
 
+  private userInfo$ = new BehaviorSubject<UserData | null>(null);
+  readonly user$ = this.userInfo$.asObservable();
+
   constructor(private http: HttpClient) {}
 
-  login(credentials: LoginRequest): Observable<void> {
-    return this.http.post("/api/login_check", credentials, { withCredentials: true})
-                      .pipe(map(() => void 0), //map(() => void 0) pentru fiecare parametru primit prelucreaza valoarea un foreach, si void 0 = undefined, ca access-tokenu oricum e http-only si at nu conteaza ce primeste angular de la symfony
-                             tap(() => this.isAuthenticated$.next(true)),// .next trimite valoarea(true) catre observer; .tap() -> daca vrei sa trimiti un logger spre exemplu, ca nu poti schimba valoarea primita in el
+  login(credentials: LoginRequest): Observable<UserData> {
+    return this.http.post<{data: UserData}>("/api/login_check", credentials, { withCredentials: true})
+                      .pipe(map(response => response.data),
+                            tap((userData) => {
+                              this.userInfo$.next(userData);
+                              this.isAuthenticated$.next(true);
+                            }),// .next trimite valoarea(true) catre observer; .tap() -> daca vrei sa trimiti un logger spre exemplu, ca nu poti schimba valoarea primita in el
                             catchError((error) => {
+                              this.userInfo$.next(null);
                               this.isAuthenticated$.next(false);
                               return throwError(() => error);
                             }));
@@ -29,6 +37,7 @@ export class Auth {
     return this.http.post("/api/token/refresh", {}, { withCredentials: true})
                       .pipe(map(() => void 0),
                               catchError((error) => {
+                                this.userInfo$.next(null);
                                 this.isAuthenticated$.next(false);
                                 return throwError(() => error);
                               }));
@@ -43,9 +52,12 @@ export class Auth {
 
   // call this once at app startup (APP_INITIALIZER), not on every route check
   checkAuthStatus(): Observable<boolean> {
-    return this.http.get("/api/me", { withCredentials: true }).pipe(
-      map(() => {
+    return this.http.get<{data: UserData}>("/api/me", { withCredentials: true }).pipe(
+      tap((response) => {
+        this.userInfo$.next(response.data);
         this.isAuthenticated$.next(true);
+      }),
+      map(() => {
         return true;
       }),
       catchError(() => {

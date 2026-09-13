@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\DTO\ProfileUpdateDTO;
 use App\Entity\User;
 use App\Service\FileUploaderService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -31,28 +32,35 @@ final class ProfileController extends AbstractController
     }
 
     #[Route('/api/user/{id}', name: 'app_api_profile', requirements: ["id" => "\d+"], methods: ["GET"])]
-    #[IsGranted("AUTHENTICATED_FULLY")]
-    public function index(#[CurrentUser] User $user): Response
+    #[IsGranted("IS_AUTHENTICATED_FULLY")]
+    public function index(int $id): Response
     {
-        //not sure if I need this if I have that observable that gets the user data on APP_INITIALIZER
-        return $this->json([
-            "data" => $user,
-        ], Response::HTTP_OK, ["groups" => ["user:read"]]);
-    }
+        $user = $this->em->getRepository(User::class)->findOneBy(["id" => $id]);
 
-    #[Route("/api/profile/", name: "app_api_profile_edit", requirements: ["id" => "\d+"], methods: ["PATCH"])]
-    #[IsGranted("AUTHENTICATED_FULLY")]
-    public function edit(#[CurrentUser] User $user, Request $request, ValidatorInterface $validator, #[Autowire(service: "App\Service\FileUploaderService.profile")] FileUploaderService $avatarUploader, Filesystem $fileSystem, LoggerInterface $logger): Response
-    {
-        if($request->headers->get("Content-Type", "") !== "application/json" || $request->headers->get("Content-Type", "") !== "multipart/form-data") {
-            return $this->json(["error" => "Request type invalid"], Response::HTTP_BAD_REQUEST);
+        if($user === null) {
+            return $this->json(["error" => "User not found."], Response::HTTP_NOT_FOUND);
         }
 
+        return $this->json([
+            "data" => $user,
+        ], Response::HTTP_OK, [], ["groups" => ["user:read"]]);
+    }
+
+    #[Route("/api/profile", name: "app_api_profile_edit", methods: ["PATCH"])]
+    #[IsGranted("IS_AUTHENTICATED_FULLY")]
+    public function edit(#[CurrentUser] User $user, Request $request, ValidatorInterface $validator, #[Autowire(service: "App\Service\FileUploaderService.profile")] FileUploaderService $avatarUploader, Filesystem $fileSystem, LoggerInterface $logger): Response
+    {
+        //check for json or form-data
+
+
+        $violations = new ConstraintViolationList();
+        $dto = new ProfileUpdateDTO();
+
         if($request->files->count() === 0) {
-            $violations = new ConstraintViolationList();
 
             try {
-                $this->serializer->deserialize($request->getContent(), User::class, "json", [AbstractNormalizer::OBJECT_TO_POPULATE => $user, DenormalizerInterface::COLLECT_DENORMALIZATION_ERRORS => true]);
+                //create a group for this deserializer [email, username, firstName, lastName]
+                $this->serializer->deserialize($request->getContent(), ProfileUpdateDTO::class, "json", [AbstractNormalizer::OBJECT_TO_POPULATE => $user, DenormalizerInterface::COLLECT_DENORMALIZATION_ERRORS => true, "groups" => ["user:update"]]);
             }catch(PartialDenormalizationException $e) {
                 foreach ($e->getNotNormalizableValueErrors() as $e) {
                     $message = sprintf('The type must be one of "%s" (%s given)', implode(', ', $e->getExpectedTypes()), $e->getCurrentType());
@@ -63,49 +71,34 @@ final class ProfileController extends AbstractController
                     $violations->add(new ConstraintViolation($message, '', $parameters, null, $e->getPath(), null));
                 }
             }
-
-            $violations->addAll($validator->validate($user));
-
-            $errors = [];
-
-            if($violations->count() > 0) {
-                foreach($violations as $violation) {
-                    $errors[$violation->getPropertyPath()] = $violation->getMessage();
-                }
-
-                return $this->json([
-                    "errors" => $errors,
-                ], Response::HTTP_UNPROCESSABLE_ENTITY);
-            }
-
         }else{
-            $email = filter_var(trim((string)$request->request->get("email") ?? ""), FILTER_SANITIZE_EMAIL);
-            $username = trim((string)$request->request->get("username") ?? "");
-            $lastName = trim((string)$request->request->get("last_name") ?? "");
-            $firstName = trim((string)$request->request->get("first_name") ?? "");
-
-            $errors = [];
-
-            if(!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors["email"] = "Email is not a valid email value.";
-            if($email === "") $errors["email"] = "Email can't be null";
-            if($username === "") $errors["name"] = "Username cannot be null.";
-            if($lastName === "") $errors["last_name"] = "Last name cannot be null.";
-            if($firstName === "") $errors["first_name"] = "First name cannot be null.";
-
-            if($errors) {
-                return $this->json([
-                    "errors" => $errors
-                ], Response::HTTP_UNPROCESSABLE_ENTITY);
-            }
-    
-            $user->setUsername($username);
-            $user->setLastName($lastName);
-            $user->setFirstName($firstName);
+            $dto->email = trim((string) $request->request->get("email"));
+            $dto->username = trim((string) $request->request->get("username"));
+            $dto->firstName = trim((string) $request->request->get("first_name"));
+            $dto->lastName = trim((string) $request->request->get("last_name"));
+            $dto->avatar = $request->files->get("avatar");    
         }
 
-        //add photo to user
-        $avatar = is_array($request->request->get("avatar")) ? $request->request->get("avatar") : [$request->request->get("avatar")];
-        if($avatar && $avatar instanceof UploadedFile) {
+        $violations->addAll($validator->validate($dto, null, ["user:update"]));
+
+        if($violations->count() > 0) {
+            $errors = [];
+
+            foreach($violations as $violation) {
+                $errors[$violation->getPropertyPath()] = $violation->getMessage();
+            }
+
+            return $this->json([
+                "data" => $errors,
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $user->setEmail($dto->email);
+        $user->setUsername($dto->username);
+        $user->setLastName($dto->lastName);
+        $user->setFirstName($dto->firstName);
+
+        if($dto->avatar instanceof UploadedFile) {
             $oldAvatar =(string) $user->getAvatar();
 
             if($oldAvatar) {
@@ -118,22 +111,19 @@ final class ProfileController extends AbstractController
                         "error" => $e->getMessage(),
                         "file" => $oldAvatar,
                     ]);
-
-                    return $this->json([
-                        "data" => "Some error occured.",
-                    ], Response::HTTP_UNPROCESSABLE_ENTITY);
                 }
             }
 
-
-            $avatarName =(array) $avatarUploader->upload($avatar);
-            $user->setAvatar($avatarName);
+            $avatarName =(string) $avatarUploader->upload($dto->avatar);
+            $user->setAvatar($avatarName);   
         }
 
         $this->em->flush();
 
         return $this->json([
-            "data" => ["Profile updated successfully."],
+            "data" => [
+                "message" => "Profile updated successfully."
+            ],
         ], Response::HTTP_OK);
     }
 }

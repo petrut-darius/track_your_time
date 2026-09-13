@@ -38,7 +38,7 @@ class ResetPasswordController extends AbstractController
     #[Route('', name: 'app_forgot_password_request')]
     public function request(Request $request, MailerInterface $mailer, UserRepository $userRepository): Response
     {
-        $data = json_decode($request->getContentTypeFormat(), true);
+        $data = json_decode($request->getContent(), true);
         $email = $data["email"] ?? null;
 
         if(!$email) {
