@@ -17,7 +17,7 @@ use Symfony\Component\Validator\Constraints\PasswordStrength;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
-#[UniqueEntity("username")]
+#[UniqueEntity(["username", "email"], groups: ["user:update"])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -29,7 +29,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 180)]
     #[Groups(["friendship:read", "user:update"])]
     #[Assert\NotBlank(groups: ['registration'])]
-    #[Assert\Email(groups: ['registration'])]
+    #[Assert\Email(mode: Assert\Email::VALIDATION_MODE_STRICT, groups: ['registration', "user:update"])]
     #[Assert\Length(max: 180, groups: ['registration'])]
     private ?string $email = null;
 
@@ -63,21 +63,21 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 30, unique: true)]
-    #[Groups(["user:read", "friendship:read", "user:update"])]
-    #[Assert\NotBlank(groups: ['registration'])]
-    #[Assert\Length(max: 30, groups: ['registration'])]
+    #[Groups(["user:read", "friendship:read", "user:update", "car:read"])]
+    #[Assert\NotBlank(groups: ['registration', "user:update"])]
+    #[Assert\Length(max: 30, groups: ['registration', "user:update"])]
     private ?string $username = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["user:read", "friendship:read", "user:update"])]
-    #[Assert\NotBlank(groups: ['registration'])]
-    #[Assert\Length(max: 255, groups: ['registration'])]
+    #[Groups(["user:read", "friendship:read", "user:update", "car:read"])]
+    #[Assert\NotBlank(groups: ['registration', "user:update"])]
+    #[Assert\Length(max: 255, groups: ['registration', "user:update"])]
     private ?string $last_name = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["user:read", "friendship:read", "user:update"])]
-    #[Assert\NotBlank(groups: ['registration'])]
-    #[Assert\Length(max: 255, groups: ['registration'])]
+    #[Groups(["user:read", "friendship:read", "user:update", "car:read"])]
+    #[Assert\NotBlank(groups: ['registration', "user:update"])]
+    #[Assert\Length(max: 255, groups: ['registration', "user:update"])]
     private ?string $first_name = null;
 
     /**
@@ -87,7 +87,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private Collection $cars;
 
     #[ORM\Column(nullable: true)]
-    #[Groups("user:read")]
+    #[Groups(["user:read", "friendship:read"])]
     private ?string $avatar = null;
 
     /**

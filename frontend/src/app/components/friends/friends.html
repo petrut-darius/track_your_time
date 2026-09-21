@@ -1,0 +1,27 @@
+@if (friends$ | async; as friends) {
+<section>
+    <h2>Your actual friends!</h2>
+    @for (friend of friends; track friend.id) {
+        @if (friend.friend.avatar) {
+            <img [src]="enviroment + friend.friend.avatar" alt="avatar" width="300">
+        }
+        <p>{{friend.friend.username}}</p>
+    } @empty {
+        <p>You have no friends</p>
+    }
+
+    @if(friendRequests$ | async; as friendRequests) {
+
+        <hr>
+        <h2>Your friend requests!</h2>
+        @for (friendRequest of friendRequests; track friendRequest.id) {
+            <p>{{friendRequest.friend.username}} wants to be your friend
+                <button (click)="acceptFriendRequest(friendRequest.id)">Accept</button>&nbsp;
+                <button (click)="removeFriendRequest(friendRequest.id)">Decline</button>
+            </p>
+        } @empty {
+            <p>You have no friend requests.</p>
+        }
+    }
+</section>
+}

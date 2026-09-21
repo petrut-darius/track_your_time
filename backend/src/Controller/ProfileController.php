@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\DTO\ProfileUpdateDTO;
 use App\Entity\User;
+use App\Repository\FriendshipRepository;
 use App\Service\FileUploaderService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -27,13 +28,13 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class ProfileController extends AbstractController
 {
-    public function __construct(private EntityManagerInterface $em, private SerializerInterface $serializer)
+    public function __construct(private EntityManagerInterface $em, private SerializerInterface $serializer, private FriendshipRepository $friendshipRepository)
     {
     }
 
     #[Route('/api/user/{id}', name: 'app_api_profile', requirements: ["id" => "\d+"], methods: ["GET"])]
     #[IsGranted("IS_AUTHENTICATED_FULLY")]
-    public function index(int $id): Response
+    public function index(int $id, #[CurrentUser] User $currentUser): Response
     {
         $user = $this->em->getRepository(User::class)->findOneBy(["id" => $id]);
 
@@ -41,9 +42,27 @@ final class ProfileController extends AbstractController
             return $this->json(["error" => "User not found."], Response::HTTP_NOT_FOUND);
         }
 
+        $friendShipStatus = null;
+        if($user !== $currentUser) {
+            $friendship = $this->friendshipRepository->findBetween($currentUser, $user);
+            $friendShipStatus = $friendship?->getStatus();    
+        }
+
+        $userData = json_decode($this->serializer->serialize($user, "json", ["groups" => ["user:read", "friendship:read"]]), true);
+        $userData["friendship_status"] = $friendShipStatus;
+
         return $this->json([
-            "data" => $user,
-        ], Response::HTTP_OK, [], ["groups" => ["user:read"]]);
+            "data" => $userData,
+        ], Response::HTTP_OK);
+    }
+
+    #[Route("/api/profile", name: "app_api_profile_get", methods: ["GET"])]
+    #[IsGranted("IS_AUTHENTICATED_FULLY")]
+    public function getEditInfo(#[CurrentUser] User $user): Response
+    {
+        return $this->json([
+            "data" => $user
+        ], Response::HTTP_OK, [], ["groups" => ["user:update"]]);
     }
 
     #[Route("/api/profile", name: "app_api_profile_edit", methods: ["PATCH"])]
@@ -59,8 +78,7 @@ final class ProfileController extends AbstractController
         if($request->files->count() === 0) {
 
             try {
-                //create a group for this deserializer [email, username, firstName, lastName]
-                $this->serializer->deserialize($request->getContent(), ProfileUpdateDTO::class, "json", [AbstractNormalizer::OBJECT_TO_POPULATE => $user, DenormalizerInterface::COLLECT_DENORMALIZATION_ERRORS => true, "groups" => ["user:update"]]);
+                $this->serializer->deserialize($request->getContent(), ProfileUpdateDTO::class, "json", [DenormalizerInterface::COLLECT_DENORMALIZATION_ERRORS => true, "groups" => ["user:update"]]);
             }catch(PartialDenormalizationException $e) {
                 foreach ($e->getNotNormalizableValueErrors() as $e) {
                     $message = sprintf('The type must be one of "%s" (%s given)', implode(', ', $e->getExpectedTypes()), $e->getCurrentType());
@@ -93,10 +111,27 @@ final class ProfileController extends AbstractController
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $user->setEmail($dto->email);
-        $user->setUsername($dto->username);
-        $user->setLastName($dto->lastName);
-        $user->setFirstName($dto->firstName);
+        $hasChanges = false;
+
+        if ($dto->email !== $user->getEmail() && $dto->email !== null) {
+            $user->setEmail($dto->email);
+            $hasChanges = true;
+        }
+
+        if ($dto->username !== $user->getUsername()  && $dto->username !== null) {
+            $user->setUsername($dto->username);
+            $hasChanges = true;
+        }
+
+        if ($dto->firstName !== $user->getFirstName() && $dto->firstName !== null) {
+            $user->setFirstName($dto->firstName);
+            $hasChanges = true;
+        }
+
+        if ($dto->lastName !== $user->getLastName() && $dto->lastName !== null) {
+            $user->setLastName($dto->lastName);
+            $hasChanges = true;
+        }
 
         if($dto->avatar instanceof UploadedFile) {
             $oldAvatar =(string) $user->getAvatar();
@@ -118,12 +153,12 @@ final class ProfileController extends AbstractController
             $user->setAvatar($avatarName);   
         }
 
-        $this->em->flush();
+        if($hasChanges) {
+            $this->em->flush();
+        }
 
         return $this->json([
-            "data" => [
-                "message" => "Profile updated successfully."
-            ],
+            "data" => $user
         ], Response::HTTP_OK);
     }
 }

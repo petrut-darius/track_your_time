@@ -1,0 +1,15 @@
+@if (car$ | async; as car) {
+<section>
+    <h2>{{car.name}}</h2>
+    <div>
+        <p>Power: {{car.hp}}</p>
+        <p [innerHTML]="car.story"></p>
+    </div>
+
+    <div>
+        @for (photo of car.photos; track photo) {
+            <img [src]="enviroment + photo" alt="profile picture" width="500">
+        }
+    </div>
+</section>
+}

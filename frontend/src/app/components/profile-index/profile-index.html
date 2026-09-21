@@ -1,12 +1,29 @@
 @if (user$ | async; as user) {
 <section>
     <div class="flex">
-        <img [src]="enviroment + user.avatar" alt="profile picture">
+        <img [src]="enviroment + user.avatar" alt="profile picture" width="500">
         <div>
             <h2>{{ user.username }}</h2>
             <p>{{ user.last_name }} {{ user.first_name }}</p>
             @if ( isOwnProfile$ | async) {
                 <a [routerLink]="['/profile/edit']">Edit your profile</a>
+            } @else {
+                @switch (user.friendship_status) {
+                    @case ('accepted') {
+                        <p>You are friends.</p>
+                    }
+                    @case ('pending') {
+                        <p>Friend request pending.</p>
+                    }
+                    @default {
+                        <button class="btn bg-amber-400" (click)="addFriend()" [disabled]="loading()">
+                            {{ loading() ? 'Sending...' : 'Add friend.' }}
+                        </button>
+                        @if (error()) {
+                            <p class="text-red-500">{{ error() }}</p>
+                        }
+                    }
+                }
             }
         </div>
     </div>

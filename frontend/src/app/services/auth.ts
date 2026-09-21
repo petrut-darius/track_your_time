@@ -2,7 +2,6 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { LoginRequest } from '../models/login-request';
 import { BehaviorSubject, catchError, map, Observable, of, tap, throwError } from 'rxjs';
-import { LoginResponse } from '../models/login-response';
 import { UserData } from '../models/user-data';
 
 @Injectable({

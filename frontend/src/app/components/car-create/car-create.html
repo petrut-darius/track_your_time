@@ -1,0 +1,61 @@
+<section>
+    <h2>Add your car.</h2>
+
+    <form [formGroup]="carForm" (ngSubmit)="createCar()" class="space-y-6">
+        <div>
+            <label for="name">Name: </label>
+            <input id="name" type="text" formControlName="name">
+
+            @if (carForm.get("name")?.invalid && carForm.get("name")?.touched) {
+                <span class="error">name should be 4 characters or longer.</span>
+            }
+
+            @if (carForm.get("name")?.errors?.["server"]) {
+                <span class="error">{{ carForm.get("name")?.errors?.["server"] }}</span>
+            }
+        </div>
+
+        <div>
+            <span>Story:</span>
+
+            @if (storyEditor(); as ed) {
+                <domternal-toolbar [editor]="ed" />
+            }
+
+            <domternal-editor
+                formControlName="story"
+                [extensions]="extensions"
+                (editorCreated)="storyEditor.set($event)"
+            />
+
+            @if (carForm.get('story'); as ctrl) {
+                @if (ctrl.touched && (ctrl.hasError('required') || ctrl.hasError('minlength') || ctrl.hasError('maxlength'))) {
+                <span class="error">Story must be between 50 and 2000 characters.</span>
+                }
+                @if (ctrl.hasError('server')) {
+                <span class="error">{{ ctrl.getError('server') }}</span>
+                }
+            }
+        </div>
+
+        <div>
+            <label for="hp">Hp: </label>
+            <input id="hp" type="number" formControlName="hp" min="0">
+
+            @if (carForm.get("hp")?.invalid && carForm.get("hp")?.touched) {
+                <span class="error">Hp should be a number</span>
+            }
+
+            @if (carForm.get("hp")?.errors?.["server"]) {
+                <span class="error">{{ carForm.get("hp")?.errors?.["server"] }}</span>
+            }
+        </div>
+
+        <div>
+            <label for="photos">Photos of your car:</label>
+            <input id="photos" type="file" multiple (change)="onPhotosSelected($event)" accept="image/*">
+        </div>
+
+        <button type="submit" [disabled]="carForm.invalid">Add car.</button>
+    </form>
+</section>

@@ -3,7 +3,6 @@ import { BehaviorSubject, catchError, map, Observable, of, tap, throwError } fro
 import { UserData } from '../models/user-data';
 import { HttpClient } from '@angular/common/http';
 import { ProfileEditRequest } from '../models/profile-edit-request';
-import { ProfileEditResponse } from '../models/profile-edit-response';
 
 @Injectable({
   providedIn: 'root',
@@ -27,7 +26,16 @@ export class Profile {
     );
   }
 
-  updateProfile(credentials: ProfileEditRequest): Observable<ProfileEditResponse> {
+  getMyProfile(): Observable<UserData> {
+    return this.http.get<{data: UserData}>("/api/profile", {withCredentials: true}).pipe(
+      map(response => response.data),
+      catchError(error => {
+        return throwError(() => error);
+      })
+    );
+  }
+
+  updateProfile(credentials: ProfileEditRequest): Observable<UserData> {
     const hasAvatar = credentials.avatar instanceof File;
 
     const body: FormData | Omit<ProfileEditRequest, 'avatar'> = hasAvatar
@@ -39,7 +47,7 @@ export class Profile {
           last_name: credentials.last_name,
         };
 
-    return this.http.patch<{data: ProfileEditResponse}>("/api/profile", body, {withCredentials: true}).pipe(
+    return this.http.patch<{data: UserData}>("/api/profile", body, {withCredentials: true}).pipe(
       map(response => response.data),
       catchError((error) => {
         return throwError(() => error);
@@ -49,15 +57,12 @@ export class Profile {
 
   private toFormData(credentials: ProfileEditRequest): FormData {
     const formData = new FormData();
-    
-    formData.append("email", credentials.email);
-    formData.append("username", credentials.username);
-    formData.append("first_name", credentials.first_name);
-    formData.append("last_name", credentials.last_name);
 
-    if(credentials.avatar) {
-      formData.append("avatar", credentials.avatar);
-    }
+    if (credentials.email !== undefined) formData.append("email", credentials.email);
+    if (credentials.username !== undefined) formData.append("username", credentials.username);
+    if (credentials.first_name !== undefined) formData.append("first_name", credentials.first_name);
+    if (credentials.last_name !== undefined) formData.append("last_name", credentials.last_name);
+    if (credentials.avatar instanceof File) formData.append("avatar", credentials.avatar);
 
     return formData;
   }

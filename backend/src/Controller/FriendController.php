@@ -35,12 +35,38 @@ final class FriendController extends AbstractController
             "friend" => $friendship->getOtherUser($user),
         ], $friendships);
 
-        return $this->json($data, Response::HTTP_OK, [], ["groups" => "friendship:read"]);
+        return $this->json(["data" => $data], Response::HTTP_OK, [], ["groups" => "friendship:read"]);
+    }
+
+    #[Route("/api/friend-requests", name: "app_api_friend_requests", methods: ["GET"])]
+    public function getFriendRequests(#[CurrentUser] User $user): Response
+    {
+        $friendRequests = $this->em->getRepository(Friendship::class)->createQueryBuilder("f")
+                                                                    ->andWhere("f.status = :status")
+                                                                    ->andWhere("f.friend = :user")
+                                                                    ->setParameter("status", "pending")
+                                                                    ->setParameter("user", $user)
+                                                                    ->getQuery()
+                                                                    ->getResult();
+
+        $data = array_map(fn(Friendship $friendship) => [
+            "id" => $friendship->getId(),
+            "status" => $friendship->getStatus(),
+            "friend" => $friendship->getOtherUser($user),
+        ], $friendRequests);
+
+        return $this->json(["data" => $data], Response::HTTP_OK, [], ["groups" => "friendship:read"]);
     }
 
     #[Route('/api/add-friend/{id}', name: 'app_api_friend_create', methods: ["POST"], requirements: ["id" => "\d+"])]
     public function create(#[CurrentUser] User $user, #[MapEntity(mapping: ["id" => "id"])] User $friend): Response
     {
+        if($this->em->getRepository(Friendship::class)->findOneBy(["user" => $user, 'friend' => $friend])) {
+            return $this->json([
+                "error" => "The friend request is pending."
+            ], Response::HTTP_CONFLICT);
+        }
+
         $friendship = new Friendship();
         $friendship->setUser($user)
                     ->setFriend($friend)
@@ -50,20 +76,15 @@ final class FriendController extends AbstractController
         $this->em->flush();
 
         return $this->json([
-
+            "data" => [
+                "message" => "Friend request pending.",
+            ]
         ], Response::HTTP_CREATED);
     }
 
     #[Route("/api/update-friend/{id}", name: "app_api_friend_update", methods: ["PATCH"], requirements: ["id" => "\d+"])]
-    public function update(#[CurrentUser] User $user, #[MapEntity(mapping: ["id" => "id"])] User $friend): Response
+    public function update(#[CurrentUser] User $user, Friendship $friendship): Response
     {
-        $friendship = $this->em->getRepository(Friendship::class)->createQueryBuilder("friendship")
-                                                                    ->andWhere("(friendship.user = :user AND friendship.friend = :friend) OR (friendship.friend = :user AND friendship.user = :friend)")
-                                                                    ->setParameter("user", $user)
-                                                                    ->setParameter("friend", $friend)
-                                                                    ->getQuery()
-                                                                    ->getOneOrNullResult();
-
         if(!$friendship) {
             throw $this->createNotFoundException();
         }
@@ -77,22 +98,21 @@ final class FriendController extends AbstractController
         $this->em->flush();
 
         return $this->json([
-
+            "data" => [
+                "message" => "Friend request accepted.",
+            ]
         ], Response::HTTP_OK);
     }
 
     #[Route("/api/remove-friend/{id}", name: "app_api_friend_delete", methods: ["DELETE"], requirements: ["id" => "\d+"])]
-    public function delete(#[CurrentUser] User $user, #[MapEntity(mapping: ["id" => "id"])] User $friend): Response
+    public function delete(#[CurrentUser] User $user, Friendship $friendship): Response
     {
-        $friendship = $this->em->getRepository(Friendship::class)->createQueryBuilder("friendship")
-                                                                    ->andWhere("(friendship.user = :user AND friendship.friend = :friend) OR (friendship.friend = :user AND friendship.user = :friend)")
-                                                                    ->setParameter("user", $user)
-                                                                    ->setParameter("friend", $friend)
-                                                                    ->getQuery()
-                                                                    ->getOneOrNullResult();
-
         if(!$friendship) {
             throw $this->createNotFoundException();
+        }
+
+        if($friendship->getFriend() !== $user) {
+            throw new AccessDeniedException();
         }
 
         $this->em->remove($friendship);

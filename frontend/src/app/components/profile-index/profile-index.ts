@@ -1,10 +1,12 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { AsyncPipe, CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Profile } from '../../services/profile';
-import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
+import { catchError, combineLatest, map, of, shareReplay, switchMap } from 'rxjs';
 import { Auth } from '../../services/auth';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Friends } from '../../services/friends';
+import { AddFriendResponse } from '../../models/add-friend-response';
 
 @Component({
   selector: 'app-profile-index',
@@ -16,6 +18,10 @@ export class ProfileIndex {
   private route = inject(ActivatedRoute);
   private profileService = inject(Profile);
   private authService = inject(Auth);
+  private friendsService = inject(Friends);
+  loading = signal(false);
+  data = signal<AddFriendResponse | null>(null);
+  error = signal<string| null>(null);
 
   protected readonly enviroment = "https://track-your-time.ddev.site/uploads/profile/";
 
@@ -28,6 +34,7 @@ export class ProfileIndex {
         return of(null);
       }),
     )),
+    shareReplay(1),
   )
 
   isOwnProfile$ = combineLatest([this.user$, this.authService.user$]).pipe(
@@ -35,4 +42,27 @@ export class ProfileIndex {
       viewedUser !== null && currentUser !== null && viewedUser.id === currentUser.id
     ),
   )
+
+  addFriend(): void {
+    const id = this.route.snapshot.paramMap.get("id");
+
+    this.loading.set(true);
+    this.error.set(null);
+
+    this.friendsService.addFriend(id!).subscribe({
+      next: (response) => {
+        this.data.set(response);
+        this.loading.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        if(err.status === 409) {
+          this.data.set({message: "Friend request already pending."});
+        } else {
+          this.error.set("Could not send friend request. Try again.");
+        }
+
+        this.loading.set(false);
+      }
+    })
+  }
 }

@@ -2,9 +2,9 @@
 
 namespace App\Controller;
 
+use App\DTO\CarDTO;
 use App\Entity\Car;
 use App\Entity\User;
-use App\Repository\CarRepository;
 use App\Service\FileUploaderService;
 use Doctrine\ORM\EntityManagerInterface;
 use Nelmio\ApiDocBundle\Attribute\Model;
@@ -20,10 +20,17 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use OpenApi\Attributes as OA;
+use Symfony\Component\Serializer\Exception\PartialDenormalizationException;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\ConstraintViolation as ValidatorConstraintViolation;
+use Symfony\Component\Validator\ConstraintViolationList;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class CarController extends AbstractController
 {
-    public function __construct(private EntityManagerInterface $em, #[Autowire(service: "App\Service\FileUploaderService.cars")] private FileUploaderService $fileUploader, private LoggerInterface $logger)
+    public function __construct(private EntityManagerInterface $em, #[Autowire(service: "App\Service\FileUploaderService.cars")] private FileUploaderService $fileUploader, private LoggerInterface $logger, private SerializerInterface $serializer, private ValidatorInterface $validator)
     {
     }
 
@@ -76,49 +83,78 @@ final class CarController extends AbstractController
     )]
     public function create(Request $request, #[CurrentUser] User $user): Response
     {
-        $name = trim((string) ($request->request->get("name") ?? ""));
-        $hp = (int) ($request->request->getInt("hp") ?? 0);
-        $story = trim((string) ($request->request->get("story") ?? ""));
+        $violations = new ConstraintViolationList();
+        $dto = new CarDTO();
 
-        $photos = $request->files->get("photos");
-        $photoNames = [];
+        if($request->files->count() === 0) {
+            try {
+                $this->serializer->deserialize($request->getContent(), CarDTO::class, "json", [AbstractNormalizer::OBJECT_TO_POPULATE => $dto, DenormalizerInterface::COLLECT_DENORMALIZATION_ERRORS => true, AbstractNormalizer::IGNORED_ATTRIBUTES => ["id", "user"]]);
+            }catch(PartialDenormalizationException $e) {
+                foreach($e->getNotNormalizableValueErrors() as $e) {
+                $message = sprintf('The type must be one of "%s" (%s given)', implode(', ', $e->getExpectedTypes()), $e->getCurrentType());
+                $parameters = [];
+                if ($e->canUseMessageForUser()) {
+                    $parameters['hint'] = $e->getMessage();
+                }
+                $violations->add(new ValidatorConstraintViolation($message, '', $parameters, null, $e->getPath(), null));
+                }
+            }
+        }else{
+            $dto->name = trim((string) $request->request->get("name"));
+            $dto->hp = (int) $request->request->get("hp");
+            $dto->story = trim((string) $request->request->get("story"));
+            $dto->photos = $request->files->get("photos");
+        }
 
-        if($photos) {
-            $fileList = is_array($photos) ? $photos : [$photos];
+        $violations->addAll($this->validator->validate($dto, null, ["car:create"]));
+
+        if($violations->count() > 0) {
+            $errors = [];
+
+            foreach($violations as $violation) {
+                $errors[$violation->getPropertyPath()] = $violation->getMessage();
+            }
+
+            return $this->json([
+                "data" => $errors,
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $car = new Car;
+
+        if($dto->photos) {
+            $photoNames = [];
+            $fileList = is_array($dto->photos) ? $dto->photos : [$dto->photos];
 
             foreach($fileList as $file) {
                 if($file instanceof UploadedFile) {
                     $photoNames[] = $this->fileUploader->upload($file);
                 }
             }
+
+            $car->setPhotos($photoNames);
         }
 
-        $errors = [];
-
-        if($name === "") $errors["name"] = "Your cars slug is required.";
-        if($hp === 0) $errors["hp"] = "Your car horsepower is required.";
-        if($story === "") $errors["story"] = "Your cars story is required."; 
-
-        if($errors) {
-            return $this->json([
-                "errors" => $errors
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        if($dto->name !== null) {
+            $car->setName($dto->name);
         }
 
-        $car = new Car();
+        if($dto->hp !== null && is_numeric($dto->hp)) {
+            $car->setHp($dto->hp);
+        }
 
-        $car->setName($name)
-            ->setHp($hp)
-            ->setStory($story)
-            ->setPhotos($photoNames)
-            ->setUser($user);
+        if($dto->story !== null) {
+            $car->setStory($dto->story);
+        }
+
+        $car->setUser($user);
 
         $this->em->persist($car);
         $this->em->flush();
 
         return $this->json([
-            "data" => "Successfully created your car",
-        ], Response::HTTP_CREATED);
+            "data" => $car,
+        ], Response::HTTP_CREATED, [], ["groups" => ["car:read"]]);
     }
 
     #[Route("/api/cars/{id}", name: "app_api_car_show", methods: ["GET"], requirements: ["id" => "\d+"])]
@@ -139,7 +175,7 @@ final class CarController extends AbstractController
         }
 
         return $this->json([
-            $car,
+            "data" => $car,
         ], Response::HTTP_OK, [], ["groups" => "car:read"]);
     }
 
@@ -172,13 +208,15 @@ final class CarController extends AbstractController
     )]
     public function edit(?Car $car, Request $request, Filesystem $fileSystem): Response
     {
+        //here to be able to also edit hp number
+
         if(!$car instanceof Car) {
             return $this->json([], Response::HTTP_NOT_FOUND);
         }
 
         $oldPhotos = $car->getPhotos();
 
-        $photos = is_array($request->request->get("photos")) ? $request->request->get("photos") : [$request->request->get("photos")];
+        $photos = is_array($request->request->all("photos")) ? $request->request->all("photos") : [$request->request->all("photos")];
         $photoNames = [];
 
         if($photos) {
@@ -216,7 +254,7 @@ final class CarController extends AbstractController
 
         return $this->json([
             "data" => "Successfully updated your car",
-        ], Response::HTTP_OK);
+        ], Response::HTTP_OK, [], ["groups" => ["car:read"]]);
     }
 
     #[Route("/api/cars/{id}/delete", name: "app_api_car_delete", requirements: ["id" => "\d+"], methods: ["DELETE"])]

@@ -5,4 +5,5 @@ export interface UserData {
     last_name: string,
     first_name: string,
     avatar: string,
+    friendship_status: "pending" | "accepted" | null,
 }

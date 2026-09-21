@@ -38,8 +38,9 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
                       switchMap((success) => success ? next(req) : throwError(() => new Error("Session expired.")))
                   )
               }            
+          }else{
+            return throwError(() => error);
           }
-          return throwError(() => error);
       })
     );
 };

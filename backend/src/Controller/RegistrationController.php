@@ -90,11 +90,10 @@ final class RegistrationController extends AbstractController
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-    $plainPassword = $user->getPlainPassword();
-    if ($plainPassword === null) {
-        // belt-and-suspenders: should be caught by validation above, but never trust one layer
-        return $this->json(["errors" => ["plainPassword" => "This value should not be blank."]], Response::HTTP_UNPROCESSABLE_ENTITY);
-    }
+        $plainPassword = $user->getPlainPassword();
+        if ($plainPassword === null) {
+            return $this->json(["errors" => ["plainPassword" => "This value should not be blank."]], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
 
         $user->setPassword($passwordHasher->hashPassword($user, $user->getPlainPassword()));
         $user->setPlainPassword(null);

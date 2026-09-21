@@ -13,7 +13,7 @@
         </div>
         <div>
             <ul *ngIf="authService.user$ | async as user; else loggedOut" class="flex gap-4">
-                <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm">Friends</li>
+                <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm" routerLinkActive="bg-black text-white"><a [routerLink]="['/friends']">Friends</a></li>
                 <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm" routerLinkActive="bg-black text-white"><a [routerLink]="['/profile', user.id]">Profile</a></li>
             </ul>
             <ng-template #loggedOut>

@@ -1,4 +1,4 @@
-import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
@@ -16,5 +16,6 @@ export const appConfig: ApplicationConfig = {
       const auth = inject(Auth);
       return firstValueFrom(auth.checkAuthStatus());
     }),
+    provideZonelessChangeDetection(),
   ]
 };
