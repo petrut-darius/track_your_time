@@ -6,6 +6,11 @@
         <p [innerHTML]="car.story"></p>
     </div>
 
+    @if (isOwnCar$ | async) {
+        <a [routerLink]="[`/cars/${car.id}/edit`]">Update your car.</a>
+    }
+
+
     <div>
         @for (photo of car.photos; track photo) {
             <img [src]="enviroment + photo" alt="profile picture" width="500">

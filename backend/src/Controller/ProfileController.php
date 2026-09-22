@@ -78,7 +78,7 @@ final class ProfileController extends AbstractController
         if($request->files->count() === 0) {
 
             try {
-                $this->serializer->deserialize($request->getContent(), ProfileUpdateDTO::class, "json", [DenormalizerInterface::COLLECT_DENORMALIZATION_ERRORS => true, "groups" => ["user:update"]]);
+                $dto = $this->serializer->deserialize($request->getContent(), ProfileUpdateDTO::class, "json", [DenormalizerInterface::COLLECT_DENORMALIZATION_ERRORS => true, "groups" => ["user:update"]]);
             }catch(PartialDenormalizationException $e) {
                 foreach ($e->getNotNormalizableValueErrors() as $e) {
                     $message = sprintf('The type must be one of "%s" (%s given)', implode(', ', $e->getExpectedTypes()), $e->getCurrentType());
@@ -133,6 +133,10 @@ final class ProfileController extends AbstractController
             $hasChanges = true;
         }
 
+        if($hasChanges) {
+            $this->em->flush();
+        }
+
         if($dto->avatar instanceof UploadedFile) {
             $oldAvatar =(string) $user->getAvatar();
 
@@ -151,9 +155,6 @@ final class ProfileController extends AbstractController
 
             $avatarName =(string) $avatarUploader->upload($dto->avatar);
             $user->setAvatar($avatarName);   
-        }
-
-        if($hasChanges) {
             $this->em->flush();
         }
 

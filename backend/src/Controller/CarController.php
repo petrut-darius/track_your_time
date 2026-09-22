@@ -24,7 +24,7 @@ use Symfony\Component\Serializer\Exception\PartialDenormalizationException;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Component\Validator\ConstraintViolation as ValidatorConstraintViolation;
+use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -88,7 +88,7 @@ final class CarController extends AbstractController
 
         if($request->files->count() === 0) {
             try {
-                $this->serializer->deserialize($request->getContent(), CarDTO::class, "json", [AbstractNormalizer::OBJECT_TO_POPULATE => $dto, DenormalizerInterface::COLLECT_DENORMALIZATION_ERRORS => true, AbstractNormalizer::IGNORED_ATTRIBUTES => ["id", "user"]]);
+                $dto = $this->serializer->deserialize($request->getContent(), CarDTO::class, "json", [AbstractNormalizer::OBJECT_TO_POPULATE => $dto, DenormalizerInterface::COLLECT_DENORMALIZATION_ERRORS => true, AbstractNormalizer::IGNORED_ATTRIBUTES => ["id", "user"]]);
             }catch(PartialDenormalizationException $e) {
                 foreach($e->getNotNormalizableValueErrors() as $e) {
                 $message = sprintf('The type must be one of "%s" (%s given)', implode(', ', $e->getExpectedTypes()), $e->getCurrentType());
@@ -96,14 +96,14 @@ final class CarController extends AbstractController
                 if ($e->canUseMessageForUser()) {
                     $parameters['hint'] = $e->getMessage();
                 }
-                $violations->add(new ValidatorConstraintViolation($message, '', $parameters, null, $e->getPath(), null));
+                $violations->add(new ConstraintViolation($message, '', $parameters, null, $e->getPath(), null));
                 }
             }
         }else{
             $dto->name = trim((string) $request->request->get("name"));
             $dto->hp = (int) $request->request->get("hp");
             $dto->story = trim((string) $request->request->get("story"));
-            $dto->photos = $request->files->get("photos");
+            $dto->photos = $request->files->all("photos");
         }
 
         $violations->addAll($this->validator->validate($dto, null, ["car:create"]));
@@ -180,7 +180,7 @@ final class CarController extends AbstractController
     }
 
     #[Route("/api/cars/{id}/edit", name: "app_api_car_edit", methods: [ "PATCH"], requirements: ["id" => "\d+"])]
-    #[IsGranted("AUTHENTICATED_FULLY")]
+    #[IsGranted("IS_AUTHENTICATED_FULLY")]
     #[OA\Tag(name: "Cars")]
     #[OA\RequestBody(
         description: "Car update data",
@@ -208,20 +208,64 @@ final class CarController extends AbstractController
     )]
     public function edit(?Car $car, Request $request, Filesystem $fileSystem): Response
     {
-        //here to be able to also edit hp number
+        $violations = new ConstraintViolationList();
+        $dto = new CarDTO();
 
-        if(!$car instanceof Car) {
-            return $this->json([], Response::HTTP_NOT_FOUND);
+        if($request->files->count() === 0) {
+            try{
+                $dto = $this->serializer->deserialize($request->getContent(), CarDTO::class, "json", [DenormalizerInterface::COLLECT_DENORMALIZATION_ERRORS => true, "groups" => ["car:update"]]);
+            }catch(PartialDenormalizationException $e) {
+                foreach ($e->getNotNormalizableValueErrors() as $e) {
+                    $message = sprintf('The type must be one of "%s" (%s given)', implode(', ', $e->getExpectedTypes()), $e->getCurrentType());
+                    $parameters = [];
+                    if ($e->canUseMessageForUser()) {
+                        $parameters['hint'] = $e->getMessage();
+                    }
+                    $violations->add(new ConstraintViolation($message, '', $parameters, null, $e->getPath(), null));
+                }
+            }
+        }else {
+            $name = $request->request->get("name"); 
+            $dto->name = $name === null ? null : trim($name);
+
+            $hp = $request->request->get("hp");
+            $dto->hp = $hp === null ? null : (int) $hp;
+
+            $story = $request->request->get("story");
+            $dto->story = $story === null ? null : trim($story);
+            
+            $dto->photos = $request->files->get("photos") ?? null;
         }
 
-        $oldPhotos = $car->getPhotos();
+        $violations->addAll($this->validator->validate($dto, null, ["car:update"]));
 
-        $photos = is_array($request->request->all("photos")) ? $request->request->all("photos") : [$request->request->all("photos")];
+        $hasChanges = false;
+
+        if($dto->name !== null && $dto->name !== $car->getName()) {
+            $car->setName($dto->name);
+            $hasChanges = true;
+        }
+
+        if($dto->story !== null && $dto->story !== $car->getStory()) {
+            $car->setStory($dto->story);
+            $hasChanges = true;
+        }
+
+        if($dto->hp !== null && $dto->hp !== $car->getHp()) {
+            $car->setHp($dto->hp);
+            $hasChanges = true;
+        }
+
+        if($hasChanges) {
+            $this->em->flush();
+        }
+
         $photoNames = [];
 
-        if($photos) {
+        if($dto->photos) {
+            $oldPhotos = $car->getPhotos();
 
-            foreach($photos as $photo) {
+            foreach($dto->photos as $photo) {
                 if($photo instanceof UploadedFile) {
                     $photoNames[] = $this->fileUploader->upload($photo);
                 }
@@ -249,11 +293,10 @@ final class CarController extends AbstractController
                         ], Response::HTTP_UNPROCESSABLE_ENTITY);
                 }
             }
-
         }
 
         return $this->json([
-            "data" => "Successfully updated your car",
+            "data" => $car,
         ], Response::HTTP_OK, [], ["groups" => ["car:read"]]);
     }
 

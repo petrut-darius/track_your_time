@@ -1,14 +1,14 @@
 import { Component, inject } from '@angular/core';
 import { Auth } from '../../services/auth';
-import { ActivatedRoute } from '@angular/router';
-import { catchError, map, of, shareReplay, switchMap, tap } from 'rxjs';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { catchError, combineLatest, map, of, shareReplay, switchMap, tap } from 'rxjs';
 import { Car } from '../../services/car';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'app-car-index',
-  imports: [AsyncPipe],
+  imports: [AsyncPipe, RouterLink],
   templateUrl: './car-index.html',
   styleUrl: './car-index.css',
 })
@@ -30,4 +30,10 @@ export class CarIndex {
     )),
     shareReplay(1),
   );
+
+  isOwnCar$ = combineLatest([this.car$, this.authService.user$]).pipe(
+    map(([viewedCar, currentUser]) => 
+      viewedCar !== null && currentUser !== null && viewedCar.user.id === currentUser.id,
+    )
+  )
 }

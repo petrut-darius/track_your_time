@@ -8,6 +8,7 @@ import { Home } from './components/home/home';
 import { Friends } from './components/friends/friends';
 import { CarCreate } from './components/car-create/car-create';
 import { CarIndex } from './components/car-index/car-index';
+import { CarEdit } from './components/car-edit/car-edit';
 
 export const routes: Routes = [
     {
@@ -38,7 +39,7 @@ export const routes: Routes = [
         children: [
             {path: "create", component: CarCreate},
             {path: ":id", component: CarIndex},
-            //{path: ":id/edit"}
+            {path: ":id/edit", component: CarEdit},
         ]
     }
 ];

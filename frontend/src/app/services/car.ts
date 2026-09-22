@@ -35,13 +35,34 @@ export class Car {
     );
   }
 
+  updateCar(id: string, credentials: Partial<CarRequest>): Observable<CarResponse> {
+    const hasPhotos = this.hasFiles(credentials.photos);
+
+    const body: FormData | Omit<Partial<CarRequest>, "photos"> = hasPhotos
+      ? this.toFormData(credentials)
+      : credentials;
+
+      if (body instanceof FormData) {
+        for (const [key, value] of body.entries()) {
+          console.log(key, value instanceof File ? `File(${value.name}, ${value.size}B)` : value);
+        }
+      }
+
+    return this.http.patch<{data: CarResponse}>(`/api/cars/${id}/edit`, body, { withCredentials: true }).pipe(
+      map((response) => response.data),
+      catchError((error) => {
+        return throwError(() => error);
+      }),
+    );
+  }
+
   private hasFiles(photos?: File[] | FileList): boolean {
     if(!photos) return false;
     const list = photos instanceof File ? Array.from(photos) : photos;
     return Array.isArray(list) && list.length > 0 && list.every(f => f instanceof File);
   }
 
-  private toFormData(credentials: CarRequest): FormData {
+  private toFormData(credentials: Partial<CarRequest>): FormData {
     const formData = new FormData();
 
     if (credentials.name !== undefined) formData.append("name", credentials.name);
