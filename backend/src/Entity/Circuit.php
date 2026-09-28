@@ -6,6 +6,7 @@ use App\Repository\CircuitRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: CircuitRepository::class)]
 class Circuit
@@ -13,40 +14,50 @@ class Circuit
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["circuit:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 150)]
+    #[Groups(["circuit:read"])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["circuit:read"])]
     private ?string $image_url = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["circuit:read"])]
     private ?string $url = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(["circuit:read"])]
     private ?string $length = null;
 
     #[ORM\Column]
+    #[Groups(["circuit:read"])]
     private array $overview = [];
 
     #[ORM\Column(length: 150)]
+    #[Groups(["circuit:read"])]
     private ?string $address = null;
 
     #[ORM\ManyToOne(inversedBy: 'circuits')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(["circuit:read"])]
     private ?Country $country = null;
 
     /**
      * @var Collection<int, Status>
      */
     #[ORM\ManyToMany(targetEntity: Status::class, mappedBy: 'circuit')]
+    #[Groups(["circuit:read"])]
     private Collection $statuses;
 
     /**
      * @var Collection<int, Type>
      */
     #[ORM\ManyToMany(targetEntity: Type::class, mappedBy: 'circuit')]
+    #[Groups(["circuit:read"])]
     private Collection $types;
 
     /**
@@ -60,12 +71,14 @@ class Circuit
      * @var Collection<int, Grade>
      */
     #[ORM\ManyToMany(targetEntity: Grade::class, mappedBy: 'circuit')]
+    #[Groups(["circuit:read"])]
     private Collection $grades;
 
     /**
      * @var Collection<int, CircuitTime>
      */
     #[ORM\OneToMany(targetEntity: CircuitTime::class, mappedBy: 'circuit', orphanRemoval: true)]
+    //#[Groups(["circuit:read"])]
     private Collection $circuitTimes;
 
     public function __construct()

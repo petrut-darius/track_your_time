@@ -7,8 +7,9 @@ import { authGuard } from './guards/auth-guard';
 import { Home } from './components/home/home';
 import { Friends } from './components/friends/friends';
 import { CarCreate } from './components/car-create/car-create';
-import { CarIndex } from './components/car-index/car-index';
+import { CarShow } from './components/car-show/car-show';
 import { CarEdit } from './components/car-edit/car-edit';
+import { Register } from './components/register/register';
 
 export const routes: Routes = [
     {
@@ -19,6 +20,11 @@ export const routes: Routes = [
         path: "login",
         component: Login,
         canActivate: [noAuthGuard]
+    },
+    {
+        path: "register",
+        component: Register,
+        canActivate: [noAuthGuard],
     },
     {
         path: "profile",
@@ -38,7 +44,9 @@ export const routes: Routes = [
         canActivateChild: [authGuard],
         children: [
             {path: "create", component: CarCreate},
-            {path: ":id", component: CarIndex},
+            {path: ":id", component: CarShow
+
+            },
             {path: ":id/edit", component: CarEdit},
         ]
     }

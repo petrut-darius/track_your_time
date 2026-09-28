@@ -1,7 +1,7 @@
 @if (user$ | async; as user) {
 <section>
     <div class="flex">
-        <img [src]="enviroment + user.avatar" alt="profile picture" width="500">
+        <img [src]="enviroment + 'profile/' + user.avatar" alt="profile picture" width="500">
         <div>
             <h2>{{ user.username }}</h2>
             <p>{{ user.last_name }} {{ user.first_name }}</p>
@@ -28,4 +28,23 @@
         </div>
     </div>
 </section>
+    @if(userCars$ | async; as cars) {
+        <hr>
+        <section>
+            <div class="bg-amber-900">
+                @for (car of cars; track car.id) {
+                    <div class="bg-amber-400 w-[60%] mx-auto p-10 flex">
+                        <div>
+                            <img [src]="enviroment + 'car/' + car.photos[0]" alt="first image of car" width="500" class="rounded-xl">
+                        </div>
+                        <div class="w-[40%] px-10">
+                            <h2>{{car.name}}</h2>
+                            <p>{{car.hp}}</p>
+                            <p [innerHTML]="car.story"></p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
 }

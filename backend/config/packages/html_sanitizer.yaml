@@ -1,0 +1,22 @@
+framework:
+    html_sanitizer:
+        sanitizers:
+            app.story_sanitizer:
+                allow_safe_elements: false
+                allow_elements:
+                    p: '*'
+                    br: '*'
+                    strong: '*'
+                    em: '*'
+                    u: '*'
+                    s: '*'
+                    h2: '*'
+                    h3: '*'
+                    ul: '*'
+                    ol: '*'
+                    li: '*'
+                    blockquote: '*'
+                    a: ['href']
+                allowed_link_schemes: ['https', 'mailto']
+                allow_relative_links: false
+                max_input_length: 20000

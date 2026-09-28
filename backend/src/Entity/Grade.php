@@ -6,6 +6,7 @@ use App\Repository\GradeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: GradeRepository::class)]
 class Grade
@@ -16,6 +17,7 @@ class Grade
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(["circuit:read"])]
     private ?string $name = null;
 
     /**

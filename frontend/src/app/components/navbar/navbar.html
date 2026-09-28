@@ -12,13 +12,31 @@
             </ul>
         </div>
         <div>
-            <ul *ngIf="authService.user$ | async as user; else loggedOut" class="flex gap-4">
-                <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm" routerLinkActive="bg-black text-white"><a [routerLink]="['/friends']">Friends</a></li>
-                <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm" routerLinkActive="bg-black text-white"><a [routerLink]="['/profile', user.id]">Profile</a></li>
+            @if (authService.user$ | async; as user) {
+            <ul class="flex gap-4">
+                <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm" routerLinkActive="bg-black text-white">
+                    <a [routerLink]="['/cars/create']">Cars</a>
+                </li>
+                <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm" routerLinkActive="bg-black text-white">
+                    <a [routerLink]="['/friends']">Friends</a>
+                </li>
+                <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm" routerLinkActive="bg-black text-white">
+                    <a [routerLink]="['/profile', user.id]">Profile</a>
+                </li>
+                <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm">
+                    <button (click)="onLogout()">Logout</button>
+                </li>
             </ul>
-            <ng-template #loggedOut>
-                Logged out
-            </ng-template>
+            } @else {
+            <ul class="flex gap-4">
+                <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm" routerLinkActive="bg-black text-white">
+                    <a [routerLink]="['/register']">Register</a>
+                </li>
+                <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm" routerLinkActive="bg-black text-white">
+                    <a [routerLink]="['/login']">Login</a>
+                </li>
+            </ul>
+            }
         </div>
     </div>
 </nav>

@@ -20,6 +20,8 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use OpenApi\Attributes as OA;
+use Symfony\Component\DependencyInjection\Attribute\Target;
+use Symfony\Component\HtmlSanitizer\HtmlSanitizerInterface;
 use Symfony\Component\Serializer\Exception\PartialDenormalizationException;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
@@ -30,7 +32,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class CarController extends AbstractController
 {
-    public function __construct(private EntityManagerInterface $em, #[Autowire(service: "App\Service\FileUploaderService.cars")] private FileUploaderService $fileUploader, private LoggerInterface $logger, private SerializerInterface $serializer, private ValidatorInterface $validator)
+    public function __construct(private EntityManagerInterface $em, #[Autowire(service: "App\Service\FileUploaderService.cars")] private FileUploaderService $fileUploader, private LoggerInterface $logger, private SerializerInterface $serializer, private ValidatorInterface $validator, #[Target("app.story_sanitizer")] private HtmlSanitizerInterface $storySanitizer)
     {
     }
 
@@ -49,8 +51,19 @@ final class CarController extends AbstractController
         $cars = $this->em->getRepository(Car::class)->findAll();
 
         return $this->json([
-            $cars,
+            "data" => $cars,
         ], Response::HTTP_OK);
+    }
+
+    #[Route("/api/user-cars", name: "app_api_user_cars", methods: ["GET"])]
+    #[IsGranted("IS_AUTHENTICATED_FULLY")]
+    public function userCars(#[CurrentUser] User $user): Response
+    {
+        $cars = $user->getCars();
+
+        return $this->json([
+            "data" => $cars,
+        ], Response::HTTP_OK, [], ["groups" => ["car:read"]]);
     }
 
     #[Route("/api/cars/create", name: "app_api_car_create", methods: ["POST"])]
@@ -144,7 +157,7 @@ final class CarController extends AbstractController
         }
 
         if($dto->story !== null) {
-            $car->setStory($dto->story);
+            $car->setStory($this->storySanitizer->sanitize($dto->story));
         }
 
         $car->setUser($user);

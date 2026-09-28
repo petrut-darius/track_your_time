@@ -86,4 +86,13 @@ export class Car {
       })
     )
   }
+
+  getUserCars(): Observable<CarResponse[]> {
+    return this.http.get<{data: CarResponse[]}>("/api/user-cars", { withCredentials: true}).pipe(
+      map(response => response.data),
+      catchError(error => {
+        return throwError(() => error);
+      })
+    )
+  }
 }

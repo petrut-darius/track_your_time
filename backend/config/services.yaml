@@ -34,3 +34,8 @@ services:
         class: App\Service\FileUploaderService
         arguments:
             $targetDirectory: "%profile_photos_directory%"
+
+    App\Service\ManufactureAndModelService:
+        class: App\Service\ManufactureAndModelService
+        arguments:
+           $projectDir: "%kernel.project_dir%"

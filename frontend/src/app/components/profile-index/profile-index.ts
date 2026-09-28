@@ -7,6 +7,7 @@ import { Auth } from '../../services/auth';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Friends } from '../../services/friends';
 import { AddFriendResponse } from '../../models/add-friend-response';
+import { Car } from '../../services/car';
 
 @Component({
   selector: 'app-profile-index',
@@ -19,11 +20,12 @@ export class ProfileIndex {
   private profileService = inject(Profile);
   private authService = inject(Auth);
   private friendsService = inject(Friends);
+  private carService = inject(Car);
   loading = signal(false);
   data = signal<AddFriendResponse | null>(null);
   error = signal<string| null>(null);
 
-  protected readonly enviroment = "https://track-your-time.ddev.site/uploads/profile/";
+  protected readonly enviroment = "https://track-your-time.ddev.site/uploads/";
 
 
   user$ = this.route.paramMap.pipe(
@@ -41,6 +43,13 @@ export class ProfileIndex {
     map(([viewedUser, currentUser]) => 
       viewedUser !== null && currentUser !== null && viewedUser.id === currentUser.id
     ),
+  )
+
+  userCars$ = this.carService.getUserCars().pipe(
+    catchError((err: HttpErrorResponse) => {
+      console.error("Failed to load user cars", err.status, err.message);
+      return of(null);
+    }),
   )
 
   addFriend(): void {

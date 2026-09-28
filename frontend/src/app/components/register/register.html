@@ -1,0 +1,81 @@
+<section class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
+    <h1>Register</h1>
+
+    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+        <form [formGroup]="registerForm" (ngSubmit)="register()" class="space-y-6">
+            <div>
+                <label for="username" class="block text-sm/6 font-medium">Username</label>
+                <div class="mt-2">
+                    <input id="username" type="text" formControlName="username">
+                </div>
+
+                @if (registerForm.get("username")?.invalid && registerForm.get("username")?.touched) {
+                    <span class="error">Username must be at least 3 characters.</span>
+                }
+                @if (registerForm.get("username")?.errors?.["server"]) {
+                    <span class="error">{{ registerForm.get("username")?.errors?.["server"] }}</span>
+                }
+            </div>
+
+            <div>
+                <label for="email" class="block text-sm/6 font-medium">Email</label>
+                <div class="mt-2">
+                    <input id="email" type="email" formControlName="email">
+                </div>
+
+                @if (registerForm.get("email")?.invalid && registerForm.get("email")?.touched) {
+                    <span class="error">Enter a valid email address.</span>
+                }
+                @if (registerForm.get("email")?.errors?.["server"]) {
+                    <span class="error">{{ registerForm.get("email")?.errors?.["server"] }}</span>
+                }
+            </div>
+
+            <div>
+                <label for="first_name" class="block text-sm/6 font-medium">First name</label>
+                <div class="mt-2">
+                    <input id="first_name" type="text" formControlName="first_name">
+                </div>
+
+                @if (registerForm.get("first_name")?.invalid && registerForm.get("first_name")?.touched) {
+                    <span class="error">First name is required.</span>
+                }
+                @if (registerForm.get("first_name")?.errors?.["server"]) {
+                    <span class="error">{{ registerForm.get("first_name")?.errors?.["server"] }}</span>
+                }
+            </div>
+
+            <div>
+                <label for="last_name" class="block text-sm/6 font-medium">Last name</label>
+                <div class="mt-2">
+                    <input id="last_name" type="text" formControlName="last_name">
+                </div>
+
+                @if (registerForm.get("last_name")?.invalid && registerForm.get("last_name")?.touched) {
+                    <span class="error">Last name is required.</span>
+                }
+                @if (registerForm.get("last_name")?.errors?.["server"]) {
+                    <span class="error">{{ registerForm.get("last_name")?.errors?.["server"] }}</span>
+                }
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm/6 font-medium">Password</label>
+                <div class="mt-2">
+                    <input id="password" type="password" formControlName="plain_password">
+                </div>
+
+                @if (registerForm.get("plain_password")?.invalid && registerForm.get("plain_password")?.touched) {
+                    <span class="error">Password must be at least 8 characters.</span>
+                }
+                @if (registerForm.get("plain_password")?.errors?.["server"]) {
+                    <span class="error">{{ registerForm.get("plain_password")?.errors?.["server"] }}</span>
+                }
+            </div>
+
+            <div>
+                <button type="submit" [disabled]="registerForm.invalid">Register</button>
+            </div>
+        </form>
+    </div>
+</section>

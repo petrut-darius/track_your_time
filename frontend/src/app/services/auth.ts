@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { LoginRequest } from '../models/login-request';
 import { BehaviorSubject, catchError, map, Observable, of, tap, throwError } from 'rxjs';
 import { UserData } from '../models/user-data';
+import { RegisterRequest } from '../models/register-request';
 
 @Injectable({
   providedIn: 'root',
@@ -17,6 +18,20 @@ export class Auth {
   readonly user$ = this.userInfo$.asObservable();
 
   constructor(private http: HttpClient) {}
+
+  register(crendetials: RegisterRequest): Observable<UserData> {
+    return this.http.post<{data: UserData}>("/api/register", crendetials, {withCredentials: true})
+                      .pipe(map((response) => response.data),
+                            tap((userData) => {
+                              this.userInfo$.next(userData);
+                              this.isAuthenticated$.next(true);
+                            }),
+                            catchError((error) => {
+                              this.userInfo$.next(null);
+                              this.isAuthenticated$.next(false);
+                              return throwError(() => error);
+                            }));
+  }
 
   login(credentials: LoginRequest): Observable<UserData> {
     return this.http.post<{data: UserData}>("/api/login_check", credentials, { withCredentials: true})
@@ -45,8 +60,13 @@ export class Auth {
   logout(): Observable<void> {
     // needs a real backend endpoint that clears the cookie server-side —
     // JS cannot delete an httpOnly cookie itself
+
     return this.http.post<void>("/api/logout", {}, { withCredentials: true })
-      .pipe(tap(() => this.isAuthenticated$.next(false)));
+      .pipe(tap(() => {
+        console.log("Logout fired!");
+        this.userInfo$.next(null);
+        this.isAuthenticated$.next(false);
+      }));
   }
 
   // call this once at app startup (APP_INITIALIZER), not on every route check
