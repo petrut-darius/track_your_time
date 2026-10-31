@@ -1,0 +1,40 @@
+<section class="w-[60%] mx-auto p-10 space-y-10">
+    <h1 class="text-4xl text-center">Circuit Grading</h1>
+
+    <div class="space-y-2.5 rounded-md border px-10 py-5 border-gray-200 shadow-md shadow-gray-400">
+        <p>Circuit safety has evolved considerably since the dawn of motor racing, to the point where today there are very strict standards that must be adhered to in order to host racing events sanctioned by the governing bodies of motorsport.</p>
+        <p>There is a regular process of inspection and evaluation to ensure circuits adhere to the right standards. This can include computer simulation of proposed circuit designs, with input from drivers and riders as well as engineers.</p>
+        <p>Both the Fédération Internationale de l'Automobile (the governing body of car and truck racing) and the Fédération Internationale de Motocyclisme (which governs motorcycle and sidecar racing) issue strict guidelines for circuit construction. While largely complementary, there are some differences to cater for the more exposed nature of motorcycle racers in a crash.</p>
+        <p>The category of license varies dependent on the level of motorsport to be hosted. For example, only FIA Grade 1 circuits may host Formula One events or tests, while only FIA Grade A-rated circuits can accommodate MotoGP races.</p>
+        <p>Once the circuit is built, a very thorough verification of the safety level of the track is performed by an FIA or FIM inspector before a licence can be issued.</p>
+        <p>Circuits not homologated by the FIA or FIM are licensed by their local motorsport governing bodies and can still conform to the requirements of the various FIA and FIM gradings, but have not paid to be homologated as they only intend holding national and local level racing.</p>
+    </div>
+
+    @if (grades$ | async; as grades) {
+        <div class="rounded-md mx-auto my-10 p-5 space-y-6 border border-gray-200 shadow-md shadow-gray-400">
+            <h2 class="text-2xl">FIA Gradings as published December 15, 2022</h2>
+
+            <div>
+                @for (grade of grades; track grade.name) {
+                    @if (grade.circuit.length) {
+                        <div>
+                            <b>{{grade.name}}</b>&nbsp;&nbsp;&nbsp;<button (click)="toggleCircuits(grade.name)">Toggle circuits.</button>
+
+                            @if (expanded().has(grade.name)) {
+                                <div class="my-10 space-y-4">
+                                    @for (circuit of grade.circuit; track circuit.name) {
+                                        <div class="flex justify-between items-center p-5 w-[80%] rounded-4xl border border-gray-200 shadow-md shadow-gray-400">
+                                            <a routerLink="/circuits/{{circuit.id}}">{{circuit.name}}</a>
+                                            //link to country
+                                            <img [src]="scrapedSite + circuit.country?.image_url" alt="country_image_of_circuit" width="50">
+                                        </div>
+                                    }
+                                </div>                   
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+</section>

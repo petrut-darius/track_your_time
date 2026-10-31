@@ -17,13 +17,14 @@ class Type
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
-    #[Groups(["circuit:read"])]
+    #[Groups(["circuit:read", "type:read"])]
     private ?string $name = null;
 
     /**
      * @var Collection<int, Circuit>
      */
     #[ORM\ManyToMany(targetEntity: Circuit::class, inversedBy: 'types')]
+    #[Groups(["type:read"])]
     private Collection $circuit;
 
     public function __construct()

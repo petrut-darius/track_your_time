@@ -3,10 +3,11 @@ import { HttpClient } from '@angular/common/http';
 import { RouterOutlet } from '@angular/router';
 import { Navbar } from './components/navbar/navbar';
 import { Footer } from './components/footer/footer';
+import { NotificationToast } from './components/notification-toast/notification-toast';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, Navbar, Footer],
+  imports: [RouterOutlet, Navbar, Footer, NotificationToast],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

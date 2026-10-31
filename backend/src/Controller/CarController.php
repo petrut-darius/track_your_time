@@ -7,6 +7,7 @@ use App\Entity\Car;
 use App\Entity\User;
 use App\Service\FileUploaderService;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -46,18 +47,54 @@ final class CarController extends AbstractController
             items: new OA\Items(ref: new Model(type: Car::class))
         )
     )]
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $cars = $this->em->getRepository(Car::class)->findAll();
+        $page = max(1, $request->query->getInt("page", $request->query->getInt("p", 1)));
+        $limit = max(1, min(50, $request->query->getInt("limit", 10)));
+        $search = trim((string)$request->query->get("q", ""));
+
+        $queryBuidler = $this->em->getRepository(Car::class)->createQueryBuilder("c");
+
+        if($search !== "") {
+            $queryBuidler->andWhere("c.name LIKE :search OR c.hp LIKE :search")
+                            ->setParameter("search", "%" . $search . "%");
+        }
+
+        $queryBuidler->setFirstResult(($page - 1) * $limit)
+                        ->setMaxResults($limit)
+                        ->orderBy("c.id", "ASC");
+
+        $paginator = new Paginator($queryBuidler, fetchJoinCollection: true);
+        $cars = iterator_to_array($paginator->getIterator());
+
+        $totalItems = count($paginator);
+        $totalPages = (int) ceil($totalItems / $limit);
 
         return $this->json([
             "data" => $cars,
-        ], Response::HTTP_OK);
+            "pagination" => [
+                "page" => $page,
+                "limit" => $limit,
+                "total" => $totalItems,
+                "totalPages" => $totalPages,
+            ],
+        ], Response::HTTP_OK, [] , ["groups" => ["car:read"]]);
     }
 
-    #[Route("/api/user-cars", name: "app_api_user_cars", methods: ["GET"])]
+    #[Route("/api/users/{id}/cars", name: "app_api_user_id_cars", methods: ["GET"])]
     #[IsGranted("IS_AUTHENTICATED_FULLY")]
-    public function userCars(#[CurrentUser] User $user): Response
+    public function userCars(User $user): Response
+    {
+        $cars = $user->getCars();
+
+        return $this->json([
+            "data" => $cars,
+        ], Response::HTTP_OK, [], ["groups" => ["car:read"]]);
+    }
+
+    #[Route("/api/users/cars", name: "app_api_user_cars", methods: ["GET"])]
+    #[IsGranted("IS_AUTHENTICATED_FULLY")]
+    public function currentUserCars(#[CurrentUser] User $user): Response
     {
         $cars = $user->getCars();
 

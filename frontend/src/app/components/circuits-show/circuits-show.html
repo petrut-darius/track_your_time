@@ -1,0 +1,176 @@
+@if (circuit$ | async; as circuit) {
+<section class="mx-auto max-w-7xl p-4 sm:p-6 lg:p-10 space-y-6 sm:space-y-10">
+    <h1 class="text-3xl sm:text-4xl text-center break-words">{{circuit.name}}</h1>
+
+    <div class="flex flex-col xl:flex-row gap-6 xl:gap-10">
+        <div class="w-full xl:w-1/2 overflow-hidden rounded-xl border border-gray-200 shadow-md shadow-gray-400">
+            <img [src]="circuit.image_url" alt="circuit_image" class="w-full h-auto">
+        </div>
+        <div class="w-full xl:w-1/2 p-0 sm:p-6 xl:p-10 space-y-6">
+            <h3 class="text-xl sm:text-2xl text-center">Circuit information:</h3>
+            <ul class="space-y-4 sm:space-y-6">
+                <li class="p-4 sm:p-5 rounded-3xl sm:rounded-4xl border border-gray-200 shadow-md shadow-gray-400 break-words">Length: <b>{{circuit.length}}</b></li>
+                <li class="p-4 sm:p-5 rounded-3xl sm:rounded-4xl border border-gray-200 shadow-md shadow-gray-400 break-words">Address: <b>{{circuit.address}}</b></li>
+            </ul>
+            <div class="flex w-fit items-center gap-4 sm:gap-10 mx-auto">
+                <p class="text-lg sm:text-xl">{{circuit.country?.name | titlecase}}</p>
+                <img [src]="scrapedSite + circuit.country?.image_url" alt="circuit_country_flag" class="w-10 sm:w-[50px] h-auto">
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-6 lg:gap-10">
+        <div class="w-full lg:w-2/5 space-y-2.5 rounded-md border px-4 sm:px-10 py-5 border-gray-200 shadow-md shadow-gray-400">
+            <h2 class="text-xl sm:text-2xl text-center">Add your time records</h2>
+            <form [formGroup]="circuitTimeForm" (ngSubmit)="createCircuitTime()" class="space-y-4 p-4 sm:p-10 border border-gray-200 shadow-lg shadow-gray-400">
+                @if (errorMessage) {
+                    <p class="error">{{errorMessage}}</p>
+                }
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2 gap-4">
+                    <div>
+                        <label for="minutes" class="block text-sm/6 font-medium">Minutes:</label>
+                        <input id="minutes" type="number" min="0" max="20" required formControlName="minutes" class="px-2 rounded-lg border border-gray-200 shadow shadow-gray-400 w-full">
+
+                        @if (circuitTimeForm.get("minutes")?.invalid && circuitTimeForm.get("minutes")?.touched) {
+                            <span class="error block">Minutes are required.</span>
+                        }
+
+                        @if (circuitTimeForm.controls.minutes.touched && circuitTimeForm.controls.minutes.hasError("max")) {
+                            <span class="error block">Minutes must be 20 or less.</span>
+                        }
+
+                        @if (circuitTimeForm.get("minutes")?.errors?.["server"]) {
+                            <span class="error block">{{ circuitTimeForm.get("minutes")?.errors?.["server"] }}</span>
+                        }
+                    </div>
+
+                    <div>
+                        <label for="seconds" class="block text-sm/6 font-medium">Seconds:</label>
+                        <input id="seconds" type="number" min="0" max="59" formControlName="seconds" class="px-2 rounded-lg border border-gray-200 shadow shadow-gray-400 w-full">
+
+                        @if (circuitTimeForm.get("seconds")?.invalid && circuitTimeForm.get("seconds")?.touched) {
+                            <span class="error block">Seconds are required.</span>
+                        }
+
+                        @if (circuitTimeForm.controls.seconds.touched && circuitTimeForm.controls.seconds.hasError("max")) {
+                            <span class="error block">Seconds must be 59 or less.</span>
+                        }
+
+                        @if (circuitTimeForm.get("seconds")?.errors?.["server"]) {
+                            <span class="error block">{{ circuitTimeForm.get("seconds")?.errors?.["server"] }}</span>
+                        }
+                    </div>
+                </div>
+
+                <div>
+                    <label for="car" class="block text-sm/6 font-medium">Car:</label>
+                    <select id="car" formControlName="car" required class="px-2 rounded-lg border border-gray-200 shadow shadow-gray-400 w-full">
+                        @if (cars$ | async; as cars) {
+                            <option [ngValue]="null" disabled>Choose a car</option>
+                            @for (car of cars; track car.id) {
+                                <option [ngValue]="car.id">{{car.name}}</option>
+                            }
+                        }
+                    </select>
+
+                    @if (circuitTimeForm.controls.car.touched && circuitTimeForm.controls.car.hasError("required")) {
+                        <span class="error block">Choose a car.</span>
+                    }
+
+                    @if (circuitTimeForm.controls.car.hasError("server")) {
+                        <span class="error block">{{circuitTimeForm.controls.car.getError("server")}}</span>
+                    }
+                </div>
+
+                <div class="text-center">
+                    <button type="submit" [disabled]="circuitTimeForm.invalid" class="p-2 bg-gray-200 shadow-md shadow-gray-400 w-full">Add time.</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="w-full lg:w-3/5 space-y-5 rounded-md border px-4 sm:px-10 py-5 border-gray-200 shadow-md shadow-gray-400">
+            <h2 class="text-xl sm:text-2xl text-center">Overview</h2>
+            <div class="space-y-3">
+                @for (p of circuit.overview; track p.content) {
+                    <p>{{p.content}}</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (circuit.grades?.length) {
+        <div class="rounded-md border px-4 sm:px-10 py-5 border-gray-200 shadow-md shadow-gray-400">
+            <h2 class="text-xl sm:text-2xl">Grades:</h2>
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mt-2">
+                <p>
+                    @for (grade of circuit.grades; track grade.name) {
+                        <b>{{grade.name}}</b>@if (!$last) {<span>, </span>}
+                    }
+                </p>
+                <p class="p-2 bg-gray-200 shadow-lg shadow-gray-400 w-full sm:w-fit text-center shrink-0"><a routerLink="/grades">All grades</a></p>
+            </div>
+        </div>
+    }
+
+    @if (circuit.statuses?.length) {
+        <div class="rounded-md border px-4 sm:px-10 py-5 border-gray-200 shadow-md shadow-gray-400">
+            <h2 class="text-xl sm:text-2xl">Statuses:</h2>
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mt-2">
+                <p>
+                    @for (status of circuit.statuses; track status.name) {
+                        <b>{{status.name}}</b>@if (!$last) {<span>, </span>}
+                    }
+                </p>
+                <p class="p-2 bg-gray-200 shadow-lg shadow-gray-400 w-full sm:w-fit text-center shrink-0"><a routerLink="/statuses">All statuses</a></p>
+            </div>
+        </div>
+    }
+
+    @if (circuit.types?.length) {
+        <div class="rounded-md border px-4 sm:px-10 py-5 border-gray-200 shadow-md shadow-gray-400">
+            <h2 class="text-xl sm:text-2xl">Types:</h2>
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mt-2">
+                <p>
+                    @for (type of circuit.types; track type.name) {
+                        <b>{{type.name}}</b>@if (!$last) {<span>, </span>}
+                    }
+                </p>
+                <p class="p-2 bg-gray-200 shadow-lg shadow-gray-400 w-full sm:w-fit text-center shrink-0"><a routerLink="/types">All types</a></p>
+            </div>
+        </div>
+    }
+
+    @if (leaderboard$ | async; as leaderboard) {
+    <div class="rounded-md border px-4 sm:px-10 py-2.5 border-gray-200 shadow-md shadow-gray-400">
+        <h2 class="text-xl sm:text-2xl">Leaderboard</h2>
+        <div class="p-3 sm:p-5 space-y-2 border border-gray-200 shadow-md shadow-gray-400">
+            @for (lap of leaderboard; track lap.user.id) {
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-6 w-full md:w-3/4 xl:w-1/2 mx-auto px-4 sm:px-8 py-2.5 border border-gray-200 rounded">
+                    <p class="break-words"><a routerLink="/profile/{{lap.user.id}}">{{ lap.user.username }}</a> - <a routerLink="/cars/{{lap.car.id}}">{{lap.car.name}}</a></p>
+                    <p class="p-2 bg-gray-200 shadow-lg shadow-gray-400 w-fit text-center shrink-0">{{ lap.minutes }}:{{ lap.seconds }}</p>
+                </div>
+            } @empty {
+                <p>Nobody added their time yet.</p>
+            }
+        </div>
+    </div>
+    }
+
+    @if (friendsLeaderboard$ | async; as leaderboard) {
+    <div class="rounded-md border px-4 sm:px-10 py-2.5 border-gray-200 shadow-md shadow-gray-400">
+        <h2 class="text-xl sm:text-2xl">Friends leaderboard</h2>
+        <div class="p-3 sm:p-5 space-y-2 border border-gray-200 shadow-md shadow-gray-400">
+            @for (lap of leaderboard; track lap.user.id) {
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-6 w-full md:w-3/4 xl:w-1/2 mx-auto px-4 sm:px-8 py-2.5 border border-gray-200 rounded">
+                    <p class="break-words"><a routerLink="/profile/{{lap.user.id}}">{{ lap.user.username }}</a> - <a routerLink="/cars/{{lap.car.id}}">{{lap.car.name}}</a></p>
+                    <p class="p-2 bg-gray-200 shadow-lg shadow-gray-400 w-fit text-center shrink-0">{{ lap.minutes }}:{{ lap.seconds }}</p>
+                </div>
+            } @empty {
+                <p>Nobody added their time yet, or you don't have any friends yet. Add some!</p>
+            }
+        </div>
+    </div>
+    }
+</section>
+}

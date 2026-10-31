@@ -24,12 +24,21 @@ class CircuitTime
 
     #[ORM\ManyToOne(inversedBy: 'circuitTimes')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(["car:read"])]
     private ?Circuit $circuit = null;
 
-    #[ORM\Column(type: Types::TIME_MUTABLE)]
+    #[ORM\Column()]
+    #[Groups(["circuit-time:read", "circuit-time:create"])]
+    private ?int $minutes = null;
+
+    #[ORM\Column()]
+    #[Groups(["circuit-time:read", "circuit-time:create"])]
+    private ?int $seconds = null;
+
+    #[ORM\ManyToOne(inversedBy: 'yes')]
+    #[ORM\JoinColumn(nullable: false)]
     #[Groups(["circuit-time:read"])]
-    #[Context([DateTimeNormalizer::FORMAT_KEY => "H:i:s"])]
-    private ?\DateTime $time = null;
+    private ?Car $car = null;
 
     public function getId(): ?int
     {
@@ -60,14 +69,38 @@ class CircuitTime
         return $this;
     }
 
-    public function getTime(): ?\DateTime
+    public function getMinutes(): ?string
     {
-        return $this->time;
+        return $this->minutes;
     }
 
-    public function setTime(\DateTime $time): static
+    public function setMinutes(string $minutes): static
     {
-        $this->time = $time;
+        $this->minutes = $minutes;
+
+        return $this;
+    }
+
+    public function getSeconds(): ?string
+    {
+        return $this->seconds;
+    }
+
+    public function setSeconds(string $seconds): static
+    {
+        $this->seconds = $seconds;
+
+        return $this;
+    }
+
+    public function getCar(): ?Car
+    {
+        return $this->car;
+    }
+
+    public function setCar(?Car $car): static
+    {
+        $this->car = $car;
 
         return $this;
     }

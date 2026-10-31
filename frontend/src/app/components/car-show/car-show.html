@@ -1,20 +1,36 @@
 @if (car$ | async; as car) {
 <section>
-    <h2>{{car.name}}</h2>
-    <div>
-        <p>Power: {{car.hp}}</p>
-        <p [innerHTML]="car.story"></p>
+    <div class="w-full tablet:w-[60%] mx-auto px-10 space-y-4">
+        <div class="text-center space-y-6">
+            <h2 class="text-4xl">{{car.name}}</h2>
+            @if (isOwnCar$ | async) {
+                <a class="p-2 bg-gray-200 shadow-lg shadow-gray-400 w-fit text-center" [routerLink]="[`/cars/${car.id}/edit`]">Update your car.</a>
+            }
+        </div>
+        
+        <div class="w-full tablet:w-[60%] rounded-md mx-auto my-10 p-5 space-y-6 border border-gray-200 shadow-md shadow-gray-400">
+            <div class="p-5 rounded-4xl mx-auto border border-gray-200 shadow-md shadow-gray-400 w-fit">
+                <a class="p-2 bg-gray-200 shadow-lg shadow-gray-400 w-fit text-center" [routerLink]="[`/profile/${car.user.id}`]">See owner profile</a>
+            </div>
+
+            <div class="p-5 rounded-4xl mx-auto border border-gray-200 shadow-md shadow-gray-400 w-fit">
+                <p>Horse power: <b>{{car.hp}}</b></p>
+            </div>
+            <div class="p-5 rounded-4xl mx-auto border border-gray-200 shadow-md shadow-gray-400">
+                <p [innerHTML]="car.story"></p>
+            </div>
+        </div>
     </div>
-
-    @if (isOwnCar$ | async) {
-        <a [routerLink]="[`/cars/${car.id}/edit`]">Update your car.</a>
-    }
-
-
-    <div>
-        @for (photo of car.photos; track photo) {
-            <img [src]="enviroment + photo" alt="profile picture" width="500">
-        }
+    <div class="lg:w-[80%] w-fit mx-auto px-10 mb-10">
+        <div class="lg:flex lg:flex-wrap space-y-4 lg:space-y-0">
+            @for (photo of car.photos; track photo) {
+                <div class="sm:w-[60%] lg:w-[calc(33.333%-1rem)] mx-auto rounded-xl border border-gray-200 shadow-md shadow-gray-400">
+                    <img [src]="enviroment + photo" alt="profile picture" class="rounded-xl">
+                </div>
+            }
+        </div>
     </div>
 </section>
+
+<!--<p class="text-center">//another section circuit times</p>-->
 }

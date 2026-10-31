@@ -1,6 +1,11 @@
 {
   "/api": {
-    "target": "https://track-your-time.ddev.site",
+    "target": "https://track-your-time.ddev.site:33001",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/.well-known/mercure": {
+    "target": "https://mercure.track-your-time.ddev.site:8444",
     "secure": false,
     "changeOrigin": true
   }

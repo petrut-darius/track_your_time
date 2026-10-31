@@ -8,6 +8,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Friends } from '../../services/friends';
 import { AddFriendResponse } from '../../models/add-friend-response';
 import { Car } from '../../services/car';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-profile-index',
@@ -25,8 +26,9 @@ export class ProfileIndex {
   data = signal<AddFriendResponse | null>(null);
   error = signal<string| null>(null);
 
-  protected readonly enviroment = "https://track-your-time.ddev.site/uploads/";
+  //isOwnProfile = toSignal(this.isOwnProfile$, {initialValue: false});
 
+  protected readonly enviroment = "https://track-your-time.ddev.site:33001/uploads/";
 
   user$ = this.route.paramMap.pipe(
     map(params => params.get("id")),
@@ -45,11 +47,15 @@ export class ProfileIndex {
     ),
   )
 
-  userCars$ = this.carService.getUserCars().pipe(
-    catchError((err: HttpErrorResponse) => {
-      console.error("Failed to load user cars", err.status, err.message);
-      return of(null);
-    }),
+  userCars$ = this.route.paramMap.pipe(
+    map(params => params.get("id")),
+    switchMap(id => this.carService.getUserCars(id!).pipe(
+      catchError((err: HttpErrorResponse) => {
+        console.error("Failed to load cars", err.status, err.message);
+        return of(null);
+      }),
+    )),
+    shareReplay(1),
   )
 
   addFriend(): void {

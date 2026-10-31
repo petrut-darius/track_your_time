@@ -17,13 +17,14 @@ class Grade
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
-    #[Groups(["circuit:read"])]
+    #[Groups(["circuit:read", "grade:read"])]
     private ?string $name = null;
 
     /**
      * @var Collection<int, Circuit>
      */
     #[ORM\ManyToMany(targetEntity: Circuit::class, inversedBy: 'grades')]
+    #[Groups(["grade:read"])]
     private Collection $circuit;
 
     public function __construct()

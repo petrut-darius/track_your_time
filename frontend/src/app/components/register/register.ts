@@ -21,7 +21,7 @@ export class Register {
     email: ["", [Validators.email, Validators.required]],
     last_name: ["", [Validators.required, Validators.maxLength(30)]],
     first_name: ["", [Validators.required, Validators.maxLength(30)]],
-    password: ["", [Validators.required, Validators.minLength(8)]],
+    plain_password: ["", [Validators.required, Validators.minLength(8)]],
   })
 
   errorMessage: string|null = null;

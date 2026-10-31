@@ -1,80 +1,85 @@
 <section class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
-    <h1>Register</h1>
+    <h1 class="text-4xl text-center">Register</h1>
 
     <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <form [formGroup]="registerForm" (ngSubmit)="register()" class="space-y-6">
+        <form [formGroup]="registerForm" (ngSubmit)="register()" class="space-y-4 p-10 border border-gray-200 shadow-lg shadow-gray-400">
             <div>
-                <label for="username" class="block text-sm/6 font-medium">Username</label>
-                <div class="mt-2">
-                    <input id="username" type="text" formControlName="username">
+                <label for="username" class="block text-sm/6 font-medium">Username&nbsp;<small class="text-gray-400">*required*</small></label>
+                <div class="space-y-1">
+                    <input id="username" type="text" placeholder="Username..." formControlName="username" class="px-2 rounded-lg border border-gray-200 shadow shadow-gray-400 w-full" required>
+        
+                    @if (registerForm.get("username")?.invalid && registerForm.get("username")?.touched) {
+                        <span class="error">Username must be at least 3 characters.</span>
+                    }
+                    @if (registerForm.get("username")?.errors?.["server"]) {
+                        <span class="error">{{ registerForm.get("username")?.errors?.["server"] }}</span>
+                    }
                 </div>
 
-                @if (registerForm.get("username")?.invalid && registerForm.get("username")?.touched) {
-                    <span class="error">Username must be at least 3 characters.</span>
-                }
-                @if (registerForm.get("username")?.errors?.["server"]) {
-                    <span class="error">{{ registerForm.get("username")?.errors?.["server"] }}</span>
-                }
             </div>
 
             <div>
-                <label for="email" class="block text-sm/6 font-medium">Email</label>
-                <div class="mt-2">
-                    <input id="email" type="email" formControlName="email">
-                </div>
+                <label for="email" class="blockfont-medium">Email&nbsp;<small class="text-gray-400">*required*</small></label>
+                <div class="space-y-1">
+                    <input id="email" type="email" placeholder="Email..." formControlName="email" class="px-2 rounded-lg border border-gray-200 shadow shadow-gray-400 w-full" required>
 
-                @if (registerForm.get("email")?.invalid && registerForm.get("email")?.touched) {
-                    <span class="error">Enter a valid email address.</span>
-                }
-                @if (registerForm.get("email")?.errors?.["server"]) {
-                    <span class="error">{{ registerForm.get("email")?.errors?.["server"] }}</span>
-                }
+                    @if (registerForm.get("email")?.invalid && registerForm.get("email")?.touched) {
+                        <span class="error">Enter a valid email address.</span>
+                    }
+                    @if (registerForm.get("email")?.errors?.["server"]) {
+                        <span class="error">{{ registerForm.get("email")?.errors?.["server"] }}</span>
+                    }
+                
+                </div>
             </div>
 
             <div>
-                <label for="first_name" class="block text-sm/6 font-medium">First name</label>
-                <div class="mt-2">
-                    <input id="first_name" type="text" formControlName="first_name">
+                <label for="first_name" class="block text-sm/6 font-medium">First name&nbsp;<small class="text-gray-400">*required*</small></label>
+                <div class="space-y-1">
+                    <input id="first_name" type="text" placeholder="First name..." formControlName="first_name" class="px-2 rounded-lg border border-gray-200 shadow shadow-gray-400 w-full" required>
+        
+                    @if (registerForm.get("first_name")?.invalid && registerForm.get("first_name")?.touched) {
+                        <span class="error">First name is required.</span>
+                    }
+                    @if (registerForm.get("first_name")?.errors?.["server"]) {
+                        <span class="error">{{ registerForm.get("first_name")?.errors?.["server"] }}</span>
+                    }
                 </div>
 
-                @if (registerForm.get("first_name")?.invalid && registerForm.get("first_name")?.touched) {
-                    <span class="error">First name is required.</span>
-                }
-                @if (registerForm.get("first_name")?.errors?.["server"]) {
-                    <span class="error">{{ registerForm.get("first_name")?.errors?.["server"] }}</span>
-                }
             </div>
 
             <div>
-                <label for="last_name" class="block text-sm/6 font-medium">Last name</label>
-                <div class="mt-2">
-                    <input id="last_name" type="text" formControlName="last_name">
+                <label for="last_name" class="block text-sm/6 font-medium">Last name&nbsp;<small class="text-gray-400">*required*</small></label>
+                <div class="space-y-1">
+                    <input id="last_name" type="text" placeholder="Last name..." formControlName="last_name" class="px-2 rounded-lg border border-gray-200 shadow shadow-gray-400 w-full" required>
+        
+                    @if (registerForm.get("last_name")?.invalid && registerForm.get("last_name")?.touched) {
+                        <span class="error">Last name is required.</span>
+                    }
+                    @if (registerForm.get("last_name")?.errors?.["server"]) {
+                        <span class="error">{{ registerForm.get("last_name")?.errors?.["server"] }}</span>
+                    }
                 </div>
 
-                @if (registerForm.get("last_name")?.invalid && registerForm.get("last_name")?.touched) {
-                    <span class="error">Last name is required.</span>
-                }
-                @if (registerForm.get("last_name")?.errors?.["server"]) {
-                    <span class="error">{{ registerForm.get("last_name")?.errors?.["server"] }}</span>
-                }
             </div>
 
             <div>
-                <label for="password" class="block text-sm/6 font-medium">Password</label>
-                <div class="mt-2">
-                    <input id="password" type="password" formControlName="plain_password">
+                <label for="password" class="block text-sm/6 font-medium">Password&nbsp;<small class="text-gray-400">*required*</small></label>
+                <div class="space-y-1">
+                    <input id="plain_password" type="password" placeholder="Password..." formControlName="plain_password" class="px-2 rounded-lg border border-gray-200 shadow shadow-gray-400 w-full" required>
+        
+                    @if (registerForm.get("plain_password")?.invalid && registerForm.get("plain_password")?.touched) {
+                        <span class="error">Password must be at least 8 characters.</span>
+                    }
+                    @if (registerForm.get("plain_password")?.errors?.["server"]) {
+                        <span class="error">{{ registerForm.get("plain_password")?.errors?.["server"] }}</span>
+                    }
                 </div>
 
-                @if (registerForm.get("plain_password")?.invalid && registerForm.get("plain_password")?.touched) {
-                    <span class="error">Password must be at least 8 characters.</span>
-                }
-                @if (registerForm.get("plain_password")?.errors?.["server"]) {
-                    <span class="error">{{ registerForm.get("plain_password")?.errors?.["server"] }}</span>
-                }
             </div>
 
-            <div>
-                <button type="submit" [disabled]="registerForm.invalid">Register</button>
+            <div class="text-center">
+                <button type="submit" class="p-2 bg-gray-200 shadow-md shadow-gray-400 w-full">Register</button>
             </div>
         </form>
     </div>

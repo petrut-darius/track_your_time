@@ -1,75 +1,77 @@
-<div>
-    <h2>Edit your profile.</h2>
+<section class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
+    <h1 class="text-4xl text-center">Edit your profile.</h1>
 
-    <form [formGroup]="profileForm" (ngSubmit)="updateProfile()" class="space-y-6">
-
-        <div>
-            <label for="email">Email address</label>
+    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+        <form [formGroup]="profileForm" (ngSubmit)="updateProfile()" class="space-y-4 p-10 border border-gray-200 shadow-lg shadow-gray-400">
+            @if (errorMessage) {
+                <p class="error">{{ errorMessage }}</p>
+            }
             <div>
-                <input id="email" type="email" formControlName="email" autocomplete="email">
+                <label for="email" class="block text-sm/6 font-medium">Email address</label>
+                <div>
+                    <input id="email" type="email" formControlName="email" autocomplete="email" class="px-2 rounded-lg border border-gray-200 shadow shadow-gray-400 w-full">
+                </div>
+                @if (profileForm.get('email')?.invalid && profileForm.get('email')?.touched) {
+                    <span class="error">Valid email is required</span>
+                }
+
+                @if (profileForm.get('email')?.errors?.['server']) {
+                    <span class="error">{{ profileForm.get('email')?.errors?.['server'] }}</span>
+                }
             </div>
-            @if (profileForm.get('email')?.invalid && profileForm.get('email')?.touched) {
-                <span class="error">Valid email is required</span>
-            }
 
-            @if (profileForm.get('email')?.errors?.['server']) {
-                <span class="error">{{ profileForm.get('email')?.errors?.['server'] }}</span>
-            }
-        </div>
-
-        <div>
-            <label for="username">Username</label>
             <div>
-                <input id="username" type="text" formControlName="username">
+                <label for="username" class="block text-sm/6 font-medium">Username</label>
+                <div>
+                    <input id="username" type="text" formControlName="username" class="px-2 rounded-lg border border-gray-200 shadow shadow-gray-400 w-full">
+                </div>
+                @if (profileForm.get('username')?.invalid && profileForm.get('username')?.touched) {
+                    <span class="error">Username is required (min 3 chars)</span>
+                }
+
+                @if (profileForm.get('username')?.errors?.['server']) {
+                    <span class="error">{{ profileForm.get('username')?.errors?.['server'] }}</span>
+                }
             </div>
-            @if (profileForm.get('username')?.invalid && profileForm.get('username')?.touched) {
-                <span class="error">Username is required (min 3 chars)</span>
-            }
 
-            @if (profileForm.get('username')?.errors?.['server']) {
-                <span class="error">{{ profileForm.get('username')?.errors?.['server'] }}</span>
-            }
-        </div>
-
-        <div>
-            <label for="last_name">Last name</label>
             <div>
-                <input id="last_name" type="text" formControlName="last_name">
+                <label for="last_name" class="block text-sm/6 font-medium">Last name</label>
+                <div>
+                    <input id="last_name" type="text" formControlName="last_name" class="px-2 rounded-lg border border-gray-200 shadow shadow-gray-400 w-full">
+                </div>
+                @if (profileForm.get('last_name')?.invalid && profileForm.get('last_name')?.touched) {
+                    <span class="error">Last name is required</span>
+                }
+
+                @if (profileForm.get('last_name')?.errors?.['server']) {
+                    <span class="error">{{ profileForm.get('first_name')?.errors?.['server'] }}</span>
+                }
             </div>
-            @if (profileForm.get('last_name')?.invalid && profileForm.get('last_name')?.touched) {
-                <span class="error">Last name is required</span>
-            }
 
-            @if (profileForm.get('first_name')?.errors?.['server']) {
-                <span class="error">{{ profileForm.get('first_name')?.errors?.['server'] }}</span>
-            }
-        </div>
-
-        <div>
-            <label for="first_name">First name</label>
             <div>
-                <input id="first_name" type="text" formControlName="first_name">
+                <label for="first_name" class="block text-sm/6 font-medium">First name</label>
+                <div>
+                    <input id="first_name" type="text" formControlName="first_name" class="px-2 rounded-lg border border-gray-200 shadow shadow-gray-400 w-full">
+                </div>
+                @if (profileForm.get('first_name')?.invalid && profileForm.get('first_name')?.touched) {
+                    <span class="error">First name is required</span>
+                }
+
+                @if (profileForm.get('first_name')?.errors?.['server']) {
+                    <span class="error">{{ profileForm.get('last_name')?.errors?.['server'] }}</span>
+                }
             </div>
-            @if (profileForm.get('first_name')?.invalid && profileForm.get('first_name')?.touched) {
-                <span class="error">First name is required</span>
-            }
 
-            @if (profileForm.get('last_name')?.errors?.['server']) {
-                <span class="error">{{ profileForm.get('last_name')?.errors?.['server'] }}</span>
-            }
-        </div>
-
-        <div>
-            <label for="avatar">Avatar</label>
             <div>
-                <input id="avatar" type="file" (change)="onAvatarSelected($event)" accept="image/*">
+                <label for="avatar">Avatar</label>
+                <div>
+                    <input id="avatar" type="file" (change)="onAvatarSelected($event)" accept="image/*">
+                </div>
             </div>
-        </div>
 
-        <button type="submit" [disabled]="profileForm.invalid">Update profile</button>
-    </form>
-
-    @if (errorMessage) {
-        <p class="error">{{ errorMessage }}</p>
-    }
-</div>
+            <div class="text-center">
+                <button type="submit" class="p-2 bg-gray-200 shadow-md shadow-gray-400 w-full">Update profile</button>
+            </div>
+        </form>
+    </div>
+</section>

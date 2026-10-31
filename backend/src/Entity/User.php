@@ -23,7 +23,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["user:read", "car:read"])]
+    #[Groups(["user:read", "car:read", "friendship:read", "circuit-time:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180)]
@@ -63,7 +63,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 30, unique: true)]
-    #[Groups(["user:read", "friendship:read", "user:update", "car:read"])]
+    #[Groups(["user:read", "friendship:read", "user:update", "car:read", "circuit-time:read"])]
     #[Assert\NotBlank(groups: ['registration', "user:update"])]
     #[Assert\Length(max: 30, groups: ['registration', "user:update"])]
     private ?string $username = null;
@@ -87,7 +87,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private Collection $cars;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(["user:read", "friendship:read"])]
+    #[Groups(["user:read", "friendship:read", "circuit-time:read"])]
     private ?string $avatar = null;
 
     /**
@@ -105,12 +105,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Friendship::class, mappedBy: 'friend')]
     private Collection $receivedFriendships;
 
+    /**
+     * @var Collection<int, Notification>
+     */
+    #[ORM\OneToMany(targetEntity: Notification::class, mappedBy: 'recepient', orphanRemoval: true)]
+    #[Groups(["notifications:read"])]
+    private Collection $notifications;
+
     public function __construct()
     {
         $this->cars = new ArrayCollection();
         $this->circuitTimes = new ArrayCollection();
         $this->sentFriendships = new ArrayCollection();
-        $this->receivedFriendships = new ArrayCollection();    
+        $this->receivedFriendships = new ArrayCollection();
+        $this->notifications = new ArrayCollection();    
     }
 
     public function getId(): ?int
@@ -194,7 +202,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         // @deprecated, to be removed when upgrading to Symfony 8
     }
 
-    #[Groups("circuit-time:read")]
     public function getUsername(): ?string
     {
         return $this->username;
@@ -334,6 +341,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->sentFriendships->removeElement($friendship)) {
             if ($friendship->getUser() === $this) {
                 $friendship->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Notification>
+     */
+    public function getNotifications(): Collection
+    {
+        return $this->notifications;
+    }
+
+    public function addNotification(Notification $notification): static
+    {
+        if (!$this->notifications->contains($notification)) {
+            $this->notifications->add($notification);
+            $notification->setRecepient($this);
+        }
+
+        return $this;
+    }
+
+    public function removeNotification(Notification $notification): static
+    {
+        if ($this->notifications->removeElement($notification)) {
+            // set the owning side to null (unless already changed)
+            if ($notification->getRecepient() === $this) {
+                $notification->setRecepient(null);
             }
         }
 

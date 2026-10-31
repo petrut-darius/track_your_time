@@ -13,7 +13,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
     return next(req).pipe(//ce rezulta next(req) trece prin pipe
       catchError((error: unknown) => {
-          if(error instanceof HttpErrorResponse && error.status === 401 && !req.url.includes("/api/login_check") && !req.url.includes("/api/token/refresh")) {
+          if(error instanceof HttpErrorResponse && error.status === 401 && !req.url.includes("/api/me") && !req.url.includes("/api/login_check") && !req.url.includes("/api/token/refresh")) {
               if(!isRefreshing) {
                   isRefreshing = true;
                   refreshComplete$.next(false);

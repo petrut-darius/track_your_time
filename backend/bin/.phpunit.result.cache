@@ -1,0 +1,1 @@
+{"version":2,"defects":{"App\\Tests\\Controller\\NotificationControllerTest::testListUnauthenticated":8,"App\\Tests\\Controller\\NotificationControllerTest::testSubscribeUnauthenticated":8},"times":{"App\\Tests\\Controller\\NotificationControllerTest::testListUnauthenticated":0.049,"App\\Tests\\Controller\\NotificationControllerTest::testSubscribeUnauthenticated":0}}

@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\DTO\CircuitTimeDTO;
 use App\Entity\Car;
 use App\Entity\Circuit;
 use App\Entity\CircuitTime;
@@ -13,20 +14,23 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
+use Symfony\Component\Serializer\Exception\PartialDenormalizationException;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\ConstraintViolation;
+use Symfony\Component\Validator\ConstraintViolationList;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class CircuitTimeController extends AbstractController
 {
-    public function __construct(private EntityManagerInterface $em)
+    public function __construct(private EntityManagerInterface $em, private SerializerInterface $serializer, private ValidatorInterface $validator)
     {
     }
 
     #[Route('/circuit/{id}/time', name: 'app_circuit_time')]
     public function index(#[CurrentUser] User $user, Circuit $circuit): Response
     {
-        if(!$circuit instanceof Circuit) {
-            return $this->json([]);
-        }
-
         $circuitTimes = $this->em->getRepository(CircuitTime::class)->findBy(["circuit" => $circuit, "user" => $user]);
 
         return $this->json([
@@ -37,52 +41,72 @@ final class CircuitTimeController extends AbstractController
     #[Route("/api/circuit/{id}/time/create", name: "app_api_circuit_time_create", methods: ["POST"], requirements: ["id" => "\d+"])]
     public function create(Request $request, #[CurrentUser] User $user, #[MapEntity(mapping: ["id" => "id"])] Circuit $circuit): Response
     {
-        //only json
+        $violations = new ConstraintViolationList();
+        $dto = new CircuitTimeDTO();
 
-        if(!$circuit instanceof Circuit) {
-            return $this->json([
-                "error" => [
-                    "circuit" => "The circuit does not exist",
-                ]
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        try {
+            $dto = $this->serializer->deserialize($request->getContent(), CircuitTimeDTO::class, "json", [AbstractNormalizer::OBJECT_TO_POPULATE => $dto, DenormalizerInterface::COLLECT_DENORMALIZATION_ERRORS]);
+        }catch(PartialDenormalizationException $e) {
+            foreach($e->getNotNormalizableValueErrors() as $e) {
+            $message = sprintf('The type must be one of "%s" (%s given)', implode(', ', $e->getExpectedTypes()), $e->getCurrentType());
+            $parameters = [];
+            if ($e->canUseMessageForUser()) {
+                $parameters['hint'] = $e->getMessage();
+            }
+            $violations->add(new ConstraintViolation($message, '', $parameters, null, $e->getPath(), null));
+            }
         }
 
-        $data = $request->toArray();
+        $violations->addAll($this->validator->validate($dto, null, ["circuit-time:create"]));
 
-        $carName = $data["car_name"];
+        if($violations->count() > 0) {
+            $errors = [];
 
-        if(!$this->em->getRepository(Car::class)->findOneBy(["name" => $carName])) {
+            foreach($violations as $violation) {
+                $errors[$violation->getPropertyPath()] = $violation->getMessage();
+            }
+
             return $this->json([
-                "error" => [
-                    "car" => "The car does not exist",
-                ]
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
-
-        $car = $this->em->getRepository(Car::class)->findOneBy(["name" => $carName]);
-        $time = \DateTime::createFromFormat("H:i:s", $data["time"]);
-
-        if($time === false) {
-            return $this->json([
-                "error" => [
-                    "car" => "The time does not exist",
-                ]
+                "data" => $errors,
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         $circuitTime = new CircuitTime();
-        $circuitTime->setUser($user)
-                    ->setCircuit($circuit)
-                    ->setTime($time);
-                    //setcar
 
-        $this->em->persist($circuitTime);
-        $this->em->flush();
+        if($dto->minutes !== null) {
+            $circuitTime->setMinutes($dto->minutes);
+        }
 
-        return $this->json([], Response::HTTP_CREATED);
+        if($dto->seconds !== null) {
+            $circuitTime->setSeconds($dto->seconds);
+        }
+
+        $data = $request->toArray();
+        $carId = isset($data["car"]) ? (int) $data["car"] : null;
+
+        if(is_int($carId)) {
+            $car = $this->em->getRepository(Car::class)->findOneBy(["id" => $carId]);
+
+            $circuitTime->setUser($user)
+                        ->setCircuit($circuit)
+                        ->setCar($car);
+
+            $this->em->persist($circuitTime);
+            $this->em->flush();
+
+            return $this->json([
+                "data" => $car
+            ], Response::HTTP_CREATED, [], ["groups" => ["car:read"]]);
+        
+        }else{
+            return $this->json([
+                "data" => [
+                    "car" => "The car request is not set.(" . $carId . ")",
+                ],
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
     }
 
-    //must redo can't pass id in front-end
     #[Route("/api/circuit-time/{id}/delete", name: "app_api_circuit_time_delete", methods: ["DELETE"], requirements: ["id" => "\d+"])]
     public function delete(Request $request, CircuitTime $circuitTime): Response
     {

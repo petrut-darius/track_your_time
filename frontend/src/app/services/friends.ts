@@ -46,8 +46,8 @@ export class Friends {
     );
   }
 
-  removeFriendRequest(id: number): Observable<AddFriendResponse> {
-    return this.http.delete<{data: AddFriendResponse}>(`/api/remove-friend/${id}`, { withCredentials: true }).pipe(
+  removeFriendRequest(id: number): Observable<FriendData[]> {
+    return this.http.delete<{data: FriendData[]}>(`/api/remove-friend/${id}`, { withCredentials: true }).pipe(
         map(reponse => reponse.data),
         catchError((error) => {
           return throwError(() => error);

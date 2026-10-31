@@ -1,8 +1,9 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { catchError, map, Observable, throwError } from 'rxjs';
 import { CarResponse } from '../models/car-response';
 import { CarRequest } from '../models/car-request';
+import { PaginatedResponse } from '../models/paginated-response';
 
 @Injectable({
   providedIn: 'root',
@@ -87,12 +88,31 @@ export class Car {
     )
   }
 
-  getUserCars(): Observable<CarResponse[]> {
-    return this.http.get<{data: CarResponse[]}>("/api/user-cars", { withCredentials: true}).pipe(
+  getUserCars(id: string): Observable<CarResponse[]> {
+    return this.http.get<{data: CarResponse[]}>(`/api/users/${id}/cars`, { withCredentials: true}).pipe(
       map(response => response.data),
       catchError(error => {
         return throwError(() => error);
       })
     )
+  }
+
+  getCurrentUserCars(): Observable<CarResponse[]> {
+    return this.http.get<{data: CarResponse[]}>(`/api/users/cars`, { withCredentials: true}).pipe(
+      map(response => response.data),
+      catchError(error => {
+        return throwError(() => error);
+      })
+    )
+  }
+
+  getCars(page: number = 1, limit: number = 10, search: string = ""): Observable<PaginatedResponse<CarResponse>> {
+    let params = new HttpParams().set("page", page.toString()).set("limit", limit.toString());
+
+    if(search.trim()) {
+      params = params.set("q", search.trim());
+    }
+
+    return this.http.get<PaginatedResponse<CarResponse>>("/api/cars", { params, withCredentials: true});
   }
 }

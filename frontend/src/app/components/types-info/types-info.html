@@ -1,0 +1,41 @@
+<section class="w-[60%] mx-auto p-10 space-y-10">
+    <h1 class="text-4xl text-center">Circuit Type</h1>
+
+    <div class="space-y-2.5 rounded-md border px-10 py-5 border-gray-200 shadow-md shadow-gray-400">
+        <p>Racing circuits have evolved from the early origins of the sport, where circuits were formed from closed sections of public road, into fully-bespoke professional motorsport facilities which are easily the match for any sporting venue around the world.</p>
+        <p>Circuits can be classified into three types:</p>
+        <ul>
+            <li>Permanent circuits: these are dedicated facilities for motorsport, often specifically built for the purpose (though sometimes they may evolved over time from temporary facilities)</li>
+            <li>Temporary circuits: these are facilities which are established for the duration of a specific event and then dismantled.</li>
+            <li>Semi-permanent circuits: These may be permanent facilities that incorporate sections of public road (such as Le Mans) or circuits which are comprised of public road or parkland roads but with permanent facilities such as pits, paddock area and grandstands (such as Mount Panorama).</li>
+        </ul>
+    </div>
+
+    @if (types$ | async; as types) {
+        <div class="rounded-md mx-auto my-10 p-5 space-y-6 border border-gray-200 shadow-md shadow-gray-400">
+            <h2 class="text-2xl">Circuits by type.</h2>
+
+            <div>
+                @for (type of types; track type.name) {
+                    @if (type.circuit.length) {
+                        <div>
+                            <b>{{type.name}}</b>&nbsp;&nbsp;&nbsp;<button (click)="toggleCircuits(type.name)">Toggle circuits.</button>
+                            
+                            @if (expanded().has(type.name)) {
+                                <div class="my-10 space-y-4">
+                                    @for (circuit of type.circuit; track circuit.name) {
+                                        <div class="flex justify-between items-center p-5 w-[80%] rounded-4xl border border-gray-200 shadow-md shadow-gray-400">
+                                            <a routerLink="/circuits/{{circuit.id}}">{{circuit.name}}</a>
+                                            //link to country
+                                            <img [src]="scrapedSite + circuit.country?.image_url" alt="country_image_of_circuit" width="50">
+                                        </div>
+                                    }
+                                </div>                   
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+</section>

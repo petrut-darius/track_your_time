@@ -104,22 +104,38 @@ final class FriendController extends AbstractController
         ], Response::HTTP_OK);
     }
 
-    #[Route("/api/remove-friend/{id}", name: "app_api_friend_delete", methods: ["DELETE"], requirements: ["id" => "\d+"])]
-    public function delete(#[CurrentUser] User $user, Friendship $friendship): Response
+    #[Route("/api/remove-friend/{friendId}", name: "app_api_friend_delete", methods: ["DELETE"], requirements: ["id" => "\d+"])]
+    public function delete(#[CurrentUser] User $user, int $friendId): Response
     {
-        if(!$friendship) {
-            throw $this->createNotFoundException();
+        $friend = $this->em->getRepository(User::class)->findOneBy(["id" => $friendId]);
+
+
+        if($friend !== $user) { 
+            $friendship = $this->em->getRepository(Friendship::class)->findBetween($user, $friend);
+            $this->em->remove($friendship);
+            $this->em->flush();    
+        }else{
+            return $this->json([
+                "data" => [
+                    "friendship" => "The user can't delete a frienship with himself.(it shouldn't exist.)",
+                ]
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        if($friendship->getFriend() !== $user) {
-            throw new AccessDeniedException();
-        }
+        $friendships = $this->em->getRepository(Friendship::class)->createQueryBuilder('f')
+                                                                    ->andWhere("f.status = :status")
+                                                                    ->andWhere("f.user = :user OR f.friend = :user")
+                                                                    ->setParameter("status", "accepted")
+                                                                    ->setParameter("user", $user)
+                                                                    ->getQuery()
+                                                                    ->getResult();
 
-        $this->em->remove($friendship);
-        $this->em->flush();
+        $data = array_map(fn(Friendship $friendship) => [
+            "id" => $friendship->getId(),
+            "status" => $friendship->getStatus(),
+            "friend" => $friendship->getOtherUser($user),
+        ], $friendships);
 
-        return $this->json([
-
-        ], Response::HTTP_OK);
+        return $this->json(["data" => $data], Response::HTTP_OK, [], ["groups" => "friendship:read"]);
     }
 }

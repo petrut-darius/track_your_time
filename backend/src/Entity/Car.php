@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\CarRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -13,11 +15,11 @@ class Car
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["car:read"])]
+    #[Groups(["car:read", "circuit-time:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
-    #[Groups(["car:read"])]
+    #[Groups(["car:read", "circuit-time:read"])]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT)]
@@ -36,6 +38,17 @@ class Car
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(["car:read"])]
     private ?User $user = null;
+
+    /**
+     * @var Collection<int, CircuitTime>
+     */
+    #[ORM\OneToMany(targetEntity: CircuitTime::class, mappedBy: 'car', orphanRemoval: true)]
+    private Collection $circuitTimes;
+
+    public function __construct()
+    {
+        $this->circuitTimes = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -98,6 +111,36 @@ class Car
     public function setUser(?User $user): static
     {
         $this->user = $user;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, CircuitTime>
+     */
+    public function getCircuitTimes(): Collection
+    {
+        return $this->circuitTimes;
+    }
+
+    public function addCircuitTime(CircuitTime $circuitTime): static
+    {
+        if (!$this->circuitTimes->contains($circuitTime)) {
+            $this->circuitTimes->add($circuitTime);
+            $circuitTime->setCar($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCircuitTime(CircuitTime $circuitTime): static
+    {
+        if ($this->circuitTimes->removeElement($circuitTime)) {
+            // set the owning side to null (unless already changed)
+            if ($circuitTime->getCar() === $this) {
+                $circuitTime->setCar(null);
+            }
+        }
 
         return $this;
     }

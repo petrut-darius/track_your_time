@@ -14,11 +14,11 @@ class Circuit
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["circuit:read"])]
+    #[Groups(["circuit:read", "grade:read", "type:read", "status:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 150)]
-    #[Groups(["circuit:read"])]
+    #[Groups(["circuit:read", "grade:read", "type:read", "status:read", "car:read"])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
@@ -43,7 +43,7 @@ class Circuit
 
     #[ORM\ManyToOne(inversedBy: 'circuits')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(["circuit:read"])]
+    #[Groups(["circuit:read", "grade:read", "type:read", "status:read", "car:read"])]
     private ?Country $country = null;
 
     /**

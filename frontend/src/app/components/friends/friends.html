@@ -1,27 +1,56 @@
 @if (friends$ | async; as friends) {
 <section>
-    <h2>Your actual friends!</h2>
-    @for (friend of friends; track friend.id) {
-        @if (friend.friend.avatar) {
-            <img [src]="enviroment + friend.friend.avatar" alt="avatar" width="300">
-        }
-        <p>{{friend.friend.username}}</p>
-    } @empty {
-        <p>You have no friends</p>
-    }
+    <div class="mx-auto px-10 space-y-4">
+        <div class="text-center space-y-6">
+            <h2 class="text-4xl">Your actual friends!</h2>
+        </div>
 
-    @if(friendRequests$ | async; as friendRequests) {
-
-        <hr>
-        <h2>Your friend requests!</h2>
-        @for (friendRequest of friendRequests; track friendRequest.id) {
-            <p>{{friendRequest.friend.username}} wants to be your friend
-                <button (click)="acceptFriendRequest(friendRequest.id)">Accept</button>&nbsp;
-                <button (click)="removeFriendRequest(friendRequest.id)">Decline</button>
-            </p>
-        } @empty {
-            <p>You have no friend requests.</p>
+        @if(friends$ | async; as friends) {
+            <div class="lg:w-[60%] rounded-md mx-auto my-10 p-5 space-y-6 border border-gray-200 shadow-md shadow-gray-400">
+                @for (friend of friends ; track friend.id) {
+                    @if (friend.friend.avatar) {
+                        <img [src]="enviroment + friend.friend.avatar" alt="avatar" width="300">
+                    }
+                    <div class="p-5 rounded-4xl mx-auto border border-gray-200 shadow-md shadow-gray-400">
+                        <div class="flex justify-evenly">
+                            <a [routerLink]="[`/profile/${friend.friend.id}`]" routerLinkActive="router-link-active">{{friend.friend.username}}</a>
+                            <button class="bg-red-500 p-1 rounded text-white" (click)="removeFriendRequest(friend.friend.id)">Remove friend</button>
+                        </div>
+                    </div>
+                } @empty {
+                    <div class="text-center p-5 rounded-4xl mx-auto border border-gray-200 shadow-md shadow-gray-400">
+                        <p>You have no friends</p>
+                    </div>
+                }
+            </div>
         }
-    }
+    </div>
+</section>
+}
+
+@if(friendRequests$ | async; as friendRequests) {
+<section>
+    <div class="mx-auto px-10 space-y-4">
+        <div class="text-center space-y-6">
+            <h2 class="text-4xl">Your friend requests!</h2>
+        </div>
+
+        <div class="lg:w-[60%] rounded-md mx-auto my-10 p-5 space-y-6 border border-gray-200 shadow-md shadow-gray-400">
+            @for (friendRequest of friendRequests; track friendRequest.id) {
+                    <div class="p-5 rounded-4xl mx-auto border border-gray-200 shadow-md shadow-gray-400">
+                        <p><a [routerLink]="[`/profile/${friendRequest.friend.id}`]" routerLinkActive="router-link-active" ><b>{{friendRequest.friend.username}}</b></a> wants to be your friend</p>
+                        <div class="flex">
+                            <button class="bg-green-500" (click)="acceptFriendRequest(friendRequest.id)">Accept</button>&nbsp;
+                            <button class="bg-red-500" (click)="removeFriendRequest(friendRequest.id)">Decline</button>
+                        </div>
+                    </div>
+                
+            } @empty {
+                <div class="text-center p-5 rounded-4xl mx-auto border border-gray-200 shadow-md shadow-gray-400">
+                    <p>You have no friend requests.</p>
+                </div>
+            }
+        </div>
+    </div>
 </section>
 }

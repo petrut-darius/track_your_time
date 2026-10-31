@@ -1,0 +1,11 @@
+{% set resetUrl = "http://localhost:4200/reset-password?token=" ~ (resetToken.token|url_encode) %}
+
+<h1>Reset your password</h1>
+
+<p>We received a request to reset your password.</p>
+
+<p><a href="{{ resetUrl }}">Choose a new password</a></p>
+
+<p>This link expires in {{resetToken.expirationMessageKey|trans(resetToken.expirationMessageData, "ResetPasswordBundle")}}</p>
+
+<p>If you didn’t request a reset, you can ignore this email.</p>

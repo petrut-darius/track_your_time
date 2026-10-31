@@ -2,7 +2,14 @@
 
 @import 'tailwindcss';
 @import '@domternal/theme';
+@plugin "@tailwindcss/typography";
 
 @theme {
     --color-brand: #EB0046;
+    --breakpoint-tablet: 930px;
+}
+
+.error {
+    color: red;
+    display: block;
 }

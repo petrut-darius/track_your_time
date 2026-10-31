@@ -1,1 +1,39 @@
-<p>car-index works!</p>
+<div class="container mx-auto px-4 py-8">                                                                                                                                                                                                              
+  <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">                                                                                                                                                                      
+    <h1 class="text-2xl font-bold text-white">Circuits</h1>                                                                                                                                                                                            
+                                                                                                                                                                                                                                                       
+    <!-- Reusable Search Component -->                                                                                                                                                                                                                 
+    <app-search-input                                                                                                                                                                                                                                  
+      placeholder="Search circuit by name or city..."                                                                                                                                                                                                  
+      [initialValue]="searchQuery()"                                                                                                                                                                                                                   
+      (searchChange)="onSearch($event)"                                                                                                                                                                                                                
+    />                                                                                                                                                                                                                                                 
+  </div>                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                       
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="text-center py-10 text-gray-400">Loading circuits...</div>
+  } @else if (cars().length === 0) {
+    <div class="text-center py-10 text-gray-400">No circuits found.</div>
+  } @else {
+    <!-- List / Grid of Circuits -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for (car of cars(); track car.id) {
+        <a routerLink="/cars/{{car.id}}">
+          <div class="p-4 border border-gray-200 shadow-md shadow-gray-400">
+            <h2 class="text-lg font-semibold">{{ car.name }}</h2>
+            <p class="text-sm ">{{ car.hp }}</p>
+          </div>
+        </a>
+      }
+    </div>
+  
+    <!-- Reusable Pagination Component -->
+    <!-- (pageChange)="onPageChange($event)" listens to the emitter pageChange from pagination.ts, and calls onPageChange from car-index.ts -->
+    <app-pagination
+      [currentPage]="pagination().page"
+      [totalPages]="pagination().totalPages"
+      (pageChange)="onPageChange($event)"
+    />
+  }
+</div>

@@ -1,1 +1,13 @@
-<p>footer works!</p>
+<footer class=" mt-10 rounded-md border px-10 py-5 border-gray-200 shadow-md shadow-gray-400">
+    <div class="w-full mx-auto max-w-screen-xl p-4 md:flex md:items-center md:justify-between">
+        <span class="text-sm text-body sm:text-center">© 2026 TrackYourTime. All Rights Reserved.</span>
+        <ul class="flex flex-wrap items-center mt-3 text-sm font-medium text-body sm:mt-0">
+            <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm" routerLinkActive="bg-black text-white" [routerLinkActiveOptions]="{ exact: true }"><a routerLink="/">Home</a></li>
+            <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm" routerLinkActive="bg-black text-white"><a routerLink="/circuits">Circuits</a></li>
+            <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm" routerLinkActive="bg-black text-white"><a routerLink="/cars">Cars</a></li>
+            @if (authService.user$ | async; as user) {
+                <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm" routerLinkActive="bg-black text-white"><a [routerLink]="['/profile', user.id]">Profile</a></li>
+            }
+        </ul>
+    </div>
+</footer>

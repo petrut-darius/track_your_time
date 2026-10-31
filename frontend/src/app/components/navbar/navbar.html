@@ -1,28 +1,106 @@
-<nav class="w-[70vw] mx-auto my-10 rounded-4xl">
-    <div class="flex items-center justify-around">
-        <div>
-            //photo
+<nav class="mx-auto my-7.5 tablet:my-10 rounded-4xl">
+    <div class="tablet:flex items-center justify-around space-y-4 tablet:space-y-0">
+        <div class="tablet:w-[15%]">
+            <img src="trackyourtime_logo_red.svg" alt="Logo">
         </div>
-        <div class="bg-brand p-5 rounded-4xl">
-            <ul class="flex gap-8">
-                <li class="text-white transition hover:bg-red-900 py-1 px-2 rounded-sm" routerLinkActive="text-black" [routerLinkActiveOptions]="{ exact: true }"><a routerLink="/">Home</a></li>
-                <li class="text-white transition hover:bg-red-900 py-1 px-2 rounded-sm">Circuits</li>
-                <li class="text-white transition hover:bg-red-900 py-1 px-2 rounded-sm">Cars</li>
-                <li class="text-white transition hover:bg-red-900 py-1 px-2 rounded-sm">Leaderboard</li>
+        <div class="bg-brand p-1.5 tablet:p-5 rounded-4xl">
+            <ul class="flex tablet:gap-8 justify-evenly">
+                <li class="text-white transition hover:bg-red-900 py-1 px-1 tablet:px-2 rounded-sm" routerLinkActive="bg-black" [routerLinkActiveOptions]="{ exact: true }"><a routerLink="/">Home</a></li>
+                <li class="text-white transition hover:bg-red-900 py-1 px-1 tablet:px-2 rounded-sm" routerLinkActive="bg-black"><a routerLink="/circuits">Circuits</a></li>
+                <li class="text-white transition hover:bg-red-900 py-1 px-1 tablet:px-2 rounded-sm" routerLinkActive="bg-black"><a routerLink="/cars">Cars</a></li>
+                <!-- <li class="text-white transition hover:bg-red-900 py-1 px-1 tablet:px-2 rounded-sm"><a routerLink="/leaderboard">Leaderboard</a></li> -->
+                <li class="text-white transition hover:bg-red-900 py-1 px-1 tablet:px-2 rounded-sm" routerLinkActive="bg-black"><a routerLink="/friends">Friends</a></li>
             </ul>
         </div>
         <div>
             @if (authService.user$ | async; as user) {
-            <ul class="flex gap-4">
+            <ul class="flex gap-1 tablet:gap-4 justify-evenly items-center">
                 <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm" routerLinkActive="bg-black text-white">
-                    <a [routerLink]="['/cars/create']">Cars</a>
-                </li>
-                <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm" routerLinkActive="bg-black text-white">
-                    <a [routerLink]="['/friends']">Friends</a>
+                    <a [routerLink]="['/cars/create']">Add car</a>
                 </li>
                 <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm" routerLinkActive="bg-black text-white">
                     <a [routerLink]="['/profile', user.id]">Profile</a>
                 </li>
+
+                <!-- Notification Bell & Dropdown -->
+                <li class="relative flex items-center">
+                    <button 
+                        type="button" 
+                        (click)="toggleNotifications()" 
+                        class="relative p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition focus:outline-none cursor-pointer"
+                        aria-label="Notifications"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700 hover:text-brand transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+
+                        @if (notificationService.unreadCount() > 0) {
+                            <span class="absolute -top-1 -right-1 bg-brand text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-4 text-center shadow">
+                                {{ notificationService.unreadCount() > 99 ? '99+' : notificationService.unreadCount() }}
+                            </span>
+                        }
+                    </button>
+
+                    @if (isNotificationsOpen()) {
+                        <div class="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-2xl z-50 overflow-hidden">
+                            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
+                                <div class="flex items-center gap-2">
+                                    <h3 class="font-bold text-gray-900 dark:text-gray-100 text-sm">Notifications</h3>
+                                    @if (notificationService.unreadCount() > 0) {
+                                        <span class="bg-brand/10 text-brand text-xs font-semibold px-2 py-0.5 rounded-full">
+                                            {{ notificationService.unreadCount() }} new
+                                        </span>
+                                    }
+                                </div>
+                                @if (notificationService.unreadCount() > 0) {
+                                    <button 
+                                        type="button"
+                                        (click)="onMarkAllAsRead($event)" 
+                                        class="text-xs text-brand hover:underline font-medium cursor-pointer"
+                                    >
+                                        Mark all as read
+                                    </button>
+                                }
+                            </div>
+
+                            <div class="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
+                                @if (notificationService.notifications().length === 0) {
+                                    <div class="px-4 py-8 text-center text-gray-400 text-sm">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                        </svg>
+                                        No notifications yet
+                                    </div>
+                                } @else {
+                                    @for (notif of notificationService.notifications(); track notif.id) {
+                                        <div 
+                                            (click)="onNotificationClick(notif)" 
+                                            class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/60 cursor-pointer transition flex items-start gap-3"
+                                            [class.bg-brand/5]="!notif.readAt"
+                                        >
+                                            <div class="mt-1">
+                                                @if (!notif.readAt) {
+                                                    <span class="inline-block h-2 w-2 rounded-full bg-brand"></span>
+                                                } @else {
+                                                    <span class="inline-block h-2 w-2 rounded-full bg-transparent"></span>
+                                                }
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm text-gray-800 dark:text-gray-200" [class.font-semibold]="!notif.readAt">
+                                                    {{ notif.content }}
+                                                </p>
+                                                <span class="text-[11px] text-gray-400 mt-0.5 block">
+                                                    {{ notif.type === 'profile-edit' ? 'Profile update' : notif.type }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+                </li>
+
                 <li class="transition hover:text-white hover:bg-brand py-1 px-2 rounded-sm">
                     <button (click)="onLogout()">Logout</button>
                 </li>

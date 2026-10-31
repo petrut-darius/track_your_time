@@ -1,0 +1,41 @@
+<section class="w-[60%] mx-auto p-10 space-y-10">
+    <h1 class="text-4xl text-center">Circuit Status</h1>
+
+    <div class="space-y-2.5 rounded-md border px-10 py-5 border-gray-200 shadow-md shadow-gray-400">
+        <p>We organise tracks on RacingCircuits.info according to their current status, in one of four categories:</p>
+        <ul>
+            <li>Active: for circuits that are currently in operation.</li>
+            <li>Historic: for circuits that have ceased operating.</li>
+            <li>Proposed: for circuits which have been announced but not yet developed or are in development but not yet completed.</li>
+            <li>Undeveloped: for circuits which were proposed but never constructed.</li>
+        </ul>
+    </div>
+
+    @if (statuses$ | async; as statuses) {
+        <div class="rounded-md mx-auto my-10 p-5 space-y-6 border border-gray-200 shadow-md shadow-gray-400">
+            <h2 class="text-2xl">Circuits by status.</h2>
+
+            <div>
+                @for (status of statuses; track status.name) {
+                    @if (status.circuit.length) {
+                        <div>
+                            <b>{{status.name}}</b>&nbsp;&nbsp;&nbsp;<button (click)="toggleCircuits(status.name)">Toggle circuits.</button>
+                            
+                            @if (expanded().has(status.name)) {
+                                <div class="my-10 space-y-4">
+                                    @for (circuit of status.circuit; track circuit.name) {
+                                        <div class="flex justify-between items-center p-5 w-[80%] rounded-4xl border border-gray-200 shadow-md shadow-gray-400">
+                                            <a routerLink="/circuits/{{circuit.id}}">{{circuit.name}}</a>
+                                            //link to country
+                                            <img [src]="scrapedSite + circuit.country?.image_url" alt="country_image_of_circuit" width="50">
+                                        </div>
+                                    }
+                                </div>                   
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+</section>

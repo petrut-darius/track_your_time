@@ -3,7 +3,9 @@
 namespace App\Controller;
 
 use App\DTO\ProfileUpdateDTO;
+use App\Entity\Friendship;
 use App\Entity\User;
+use App\Message\LiveNotificationMessage;
 use App\Repository\FriendshipRepository;
 use App\Service\FileUploaderService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -15,6 +17,7 @@ use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -28,7 +31,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class ProfileController extends AbstractController
 {
-    public function __construct(private EntityManagerInterface $em, private SerializerInterface $serializer, private FriendshipRepository $friendshipRepository)
+    public function __construct(private EntityManagerInterface $em, private SerializerInterface $serializer, private FriendshipRepository $friendshipRepository, private MessageBusInterface $bus)
     {
     }
 
@@ -90,11 +93,19 @@ final class ProfileController extends AbstractController
                 }
             }
         }else{
-            $dto->email = trim((string) $request->request->get("email"));
-            $dto->username = trim((string) $request->request->get("username"));
-            $dto->firstName = trim((string) $request->request->get("first_name"));
-            $dto->lastName = trim((string) $request->request->get("last_name"));
-            $dto->avatar = $request->files->get("avatar");    
+            $email = $request->request->get("email");
+            $dto->email = $email !== null ? trim((string) $email) : null;
+
+            $username = $request->request->get("username");
+            $dto->username = $username !== null ? trim((string) $username) : null;
+
+            $firstName = $request->request->get("first_name");
+            $dto->firstName = $firstName !== null ? trim((string) $firstName) : null;
+
+            $lastName = $request->request->get("last_name");
+            $dto->lastName = $lastName !== null ? trim((string) $lastName) : null;
+
+            $dto->avatar = $request->files->get("avatar");
         }
 
         $violations->addAll($validator->validate($dto, null, ["user:update"]));
@@ -135,6 +146,26 @@ final class ProfileController extends AbstractController
 
         if($hasChanges) {
             $this->em->flush();
+        
+            //foreach friend send notif
+            $friendships = $this->em->getRepository(Friendship::class)->createQueryBuilder('f')
+                                                                        ->andWhere("f.status = :status")
+                                                                        ->andWhere("f.user = :user OR f.friend = :user")
+                                                                        ->setParameter("status", "accepted")
+                                                                        ->setParameter("user", $user)
+                                                                        ->getQuery()
+                                                                        ->getResult();
+
+            foreach($friendships as $friend) {
+                $friendId = $friend->getOtherUser($user)->getId();
+
+                $this->bus->dispatch(new LiveNotificationMessage(
+                    "profile-edit",
+                    $user->getId(),
+                    $user->getUsername() . " has updated their profile!",
+                    $friendId,
+                ));
+            }
         }
 
         if($dto->avatar instanceof UploadedFile) {
@@ -160,6 +191,6 @@ final class ProfileController extends AbstractController
 
         return $this->json([
             "data" => $user
-        ], Response::HTTP_OK);
+        ], Response::HTTP_OK, [], ["groups" => ["user:read"]]);
     }
 }

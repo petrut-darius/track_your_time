@@ -65,8 +65,14 @@ export class ProfileEdit implements OnInit {
 
     const changed = this.getChangedFields();
 
-    if(Object.keys(changed).length === 0) {
+    if(Object.keys(changed).length === 0 && !this.avatarFile) {
       this.errorMessage = "You need to update the data:)))";
+      return;
+    }
+
+    if(Object.keys(changed).length > 0 && this.profileForm.invalid) {
+      this.profileForm.markAllAsTouched();
+      this.errorMessage = "Please fill in all required fields.";
       return;
     }
 
