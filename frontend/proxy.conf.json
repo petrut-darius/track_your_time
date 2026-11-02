@@ -8,5 +8,10 @@
     "target": "https://mercure.track-your-time.ddev.site:8444",
     "secure": false,
     "changeOrigin": true
+  },
+  "/uploads": {
+    "target": "https://track-your-time.ddev.site:33001",
+    "secure": false,
+    "changeOrigin": true
   }
 }

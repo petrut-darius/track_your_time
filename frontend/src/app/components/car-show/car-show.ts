@@ -17,7 +17,7 @@ export class CarShow {
   private route = inject(ActivatedRoute);
   private carService = inject(Car);
 
-  protected readonly enviroment = "https://track-your-time.ddev.site:33001/uploads/car/";
+  protected readonly enviroment = "/uploads/car/";
 
   car$ = this.route.paramMap.pipe(
     map(params => params.get("id")),

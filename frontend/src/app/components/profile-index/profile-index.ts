@@ -28,7 +28,7 @@ export class ProfileIndex {
 
   //isOwnProfile = toSignal(this.isOwnProfile$, {initialValue: false});
 
-  protected readonly enviroment = "https://track-your-time.ddev.site:33001/uploads/";
+  protected readonly enviroment = "/uploads/";
 
   user$ = this.route.paramMap.pipe(
     map(params => params.get("id")),

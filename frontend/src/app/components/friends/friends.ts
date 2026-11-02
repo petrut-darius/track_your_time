@@ -65,5 +65,5 @@ export class Friends implements OnInit{
       })
     }
   }
-  protected readonly enviroment = "https://track-your-time.ddev.site:33001/uploads/profile/";
+  protected readonly enviroment = "/uploads/profile/";
 }
